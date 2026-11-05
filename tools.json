@@ -1,0 +1,5576 @@
+{
+  "spec_version": "1.18.0",
+  "tools": [
+    {
+      "name": "get_account",
+      "description": "Get the account. Identity, plan, the calling key and its scope, and the configured webhook endpoints. The cheapest call to prove a key works.",
+      "method": "GET",
+      "path": "/account",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_overview",
+      "description": "Get the account overview. The numbers behind the portal's Overview page, computed by the same data layer: a rolling window against the same length of time before it (current/previous pairs). Messages per channel, AI vs automation replies, flow entries (with an attached comment trigger's fires on the flow's own row so a comment is never counted twice), standalone comment trigger fires, contacts, appointments with the next few, knowledge gaps by status, what needs a human, API sends, and plan usage for the billing cycle. Usage is always the billing cycle, whatever the range.",
+      "method": "GET",
+      "path": "/analytics/overview",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "range"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "type": "string",
+            "enum": [
+              "7d",
+              "30d",
+              "90d"
+            ],
+            "default": "30d",
+            "description": "Window: 7d, 30d or 90d. Default 30d, which is what the page shows. The previous window is the same length, so 7d compares against the 7 days before it."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_contacts",
+      "description": "List contacts. Cursor-paginated, newest first. Filters combine with AND.",
+      "method": "GET",
+      "path": "/contacts",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "channel",
+          "stage",
+          "tag",
+          "email",
+          "phone",
+          "name",
+          "updated_since",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "facebook",
+              "instagram",
+              "sms",
+              "telegram",
+              "whatsapp"
+            ],
+            "description": "Channel the contact was seen on."
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "new",
+              "contacted",
+              "qualified",
+              "customer",
+              "lost"
+            ],
+            "description": "Pipeline stage."
+          },
+          "tag": {
+            "type": "string",
+            "description": "Exact tag name the contact carries."
+          },
+          "email": {
+            "type": "string",
+            "description": "Exact email match."
+          },
+          "phone": {
+            "type": "string",
+            "description": "Exact phone match."
+          },
+          "name": {
+            "type": "string",
+            "description": "Substring match on the display name."
+          },
+          "updated_since": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 UTC. Contacts updated at or after this time."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_contact",
+      "description": "Get a contact. One contact by id.",
+      "method": "GET",
+      "path": "/contacts/{id}",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "upsert_contact",
+      "description": "Create or update a contact. Upsert keyed by (channel, platform_user_id). 201 when created, 200 when an existing contact was updated. Fields you omit on an existing contact are left untouched, tags included.",
+      "method": "POST",
+      "path": "/contacts",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "channel",
+          "platform_user_id",
+          "name",
+          "email",
+          "phone",
+          "stage",
+          "notes",
+          "tags",
+          "custom_fields"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "facebook",
+              "instagram",
+              "sms",
+              "telegram",
+              "whatsapp"
+            ]
+          },
+          "platform_user_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "new",
+              "contacted",
+              "qualified",
+              "customer",
+              "lost"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 5000
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tag names, created if missing."
+          },
+          "custom_fields": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "channel",
+          "platform_user_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_contact",
+      "description": "Update a contact. Partial update. Only the fields you send change. An empty string clears name, email, phone or notes. custom_fields merges per key; null clears one value.",
+      "method": "PATCH",
+      "path": "/contacts/{id}",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "name",
+          "email",
+          "phone",
+          "stage",
+          "notes",
+          "custom_fields"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Empty string clears."
+          },
+          "email": {
+            "type": "string",
+            "description": "Valid email, or empty string to clear."
+          },
+          "phone": {
+            "type": "string",
+            "description": "Digits, +, spaces, dashes, brackets. Empty string clears."
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "new",
+              "contacted",
+              "qualified",
+              "customer",
+              "lost"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 5000
+          },
+          "custom_fields": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Merged per key. Null clears one value."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_tags",
+      "description": "List tags. Every tag definition, ordered by name. Not paginated.",
+      "method": "GET",
+      "path": "/tags",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_tag",
+      "description": "Create a tag. Idempotent on name: 201 when created, 200 when it already existed (colour unchanged).",
+      "method": "POST",
+      "path": "/tags",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "name",
+          "color"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "default": "#5046E5"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "tag_contact",
+      "description": "Attach a tag. Attach by name. The tag is created if it does not exist. Re-attaching is a no-op.",
+      "method": "POST",
+      "path": "/contacts/{id}/tags",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "name"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "untag_contact",
+      "description": "Detach a tag. Detach by tag id or URL-encoded name. Detaching a tag the contact does not have is a 200.",
+      "method": "DELETE",
+      "path": "/contacts/{id}/tags/{tag}",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id",
+          "tag"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "tag": {
+            "type": "string",
+            "description": "Tag id or name."
+          }
+        },
+        "required": [
+          "id",
+          "tag"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "delete_tag",
+      "description": "Delete a tag. Removes the definition and detaches it from every contact and conversation.",
+      "method": "DELETE",
+      "path": "/tags/{id}",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_custom_fields",
+      "description": "List custom field definitions. Active fields by default.",
+      "method": "GET",
+      "path": "/custom-fields",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "include_archived"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "include_archived": {
+            "type": "boolean",
+            "description": "Include archived definitions."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_custom_field",
+      "description": "Create a custom field. field_key is permanent after creation. Up to 15 active fields.",
+      "method": "POST",
+      "path": "/custom-fields",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "field_key",
+          "label",
+          "type"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "field_key": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]{1,50}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number",
+              "date",
+              "boolean"
+            ]
+          }
+        },
+        "required": [
+          "field_key",
+          "label",
+          "type"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_custom_field",
+      "description": "Rename or archive a custom field. Change the label, or archive and unarchive. Archived fields keep their values but stop appearing on contacts.",
+      "method": "PATCH",
+      "path": "/custom-fields/{id}",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "label",
+          "archived"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_conversations",
+      "description": "List conversations. Cursor-paginated, newest first. Deleted conversations are never returned.",
+      "method": "GET",
+      "path": "/conversations",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "channel",
+          "status",
+          "assigned_to",
+          "updated_since",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "facebook",
+              "instagram",
+              "sms",
+              "telegram",
+              "whatsapp"
+            ],
+            "description": "Channel."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "resolved",
+              "pending",
+              "archived",
+              "escalated"
+            ],
+            "description": "Conversation status."
+          },
+          "assigned_to": {
+            "type": "integer",
+            "description": "Team member id. Negative values are owner-level assignments."
+          },
+          "updated_since": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 UTC."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_conversation",
+      "description": "Get a conversation. One conversation by id.",
+      "method": "GET",
+      "path": "/conversations/{id}",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_messages",
+      "description": "List messages in a conversation. The transcript, newest first. Purged bodies appear with text null and body_purged true.",
+      "method": "GET",
+      "path": "/conversations/{id}/messages",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50,
+            "description": "1 to 100, default 50."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_conversation",
+      "description": "Update a conversation. Two optional fields. status: active, resolved or archived; resolving or archiving hands the thread back to the AI, like the inbox. ai_paused: true takes the thread away from the AI as the account owner (the inbox Claim button, reopens a resolved thread); false hands it back (the inbox Transfer to AI). Resume is refused with 409 when the pause came from a solicitation pause, a fraud flag or a connected-account pause; those are lifted in the portal. status is applied first, then ai_paused.",
+      "method": "PATCH",
+      "path": "/conversations/{id}",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "status",
+          "ai_paused"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "resolved",
+              "archived"
+            ],
+            "description": "resolved or archived clears the assignment. pending and escalated are set by the system only."
+          },
+          "ai_paused": {
+            "type": "boolean",
+            "description": "true pauses the AI on this thread as the owner; false hands it back to the AI."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "send_message",
+      "description": "Send a message. Send text, a WhatsApp template, a reaction, or a typing indicator on any channel. Route by conversation_id, by platform plus platform_user_id, or by to_phone for SMS and WhatsApp. SMS, WhatsApp and Telegram can start a conversation cold; Facebook and Instagram need an inbound message first. idempotency_key is required in the body, or send the Idempotency-Key header. This reaches a real person on their phone. Confirm the recipient and the text with the user before calling.",
+      "method": "POST",
+      "path": "/messages",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "idempotency_key",
+          "action",
+          "conversation_id",
+          "platform",
+          "platform_user_id",
+          "to_phone",
+          "message_text",
+          "template_name",
+          "template_language",
+          "template_components",
+          "target_message_id",
+          "reaction"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Required unless the Idempotency-Key header is sent. A replay returns the original result with status duplicate."
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "send_message",
+              "react",
+              "unreact",
+              "typing_on"
+            ],
+            "default": "send_message"
+          },
+          "conversation_id": {
+            "type": "integer",
+            "description": "Route by conversation."
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "facebook",
+              "instagram",
+              "sms",
+              "telegram",
+              "whatsapp"
+            ],
+            "description": "With platform_user_id, route by the channel identity."
+          },
+          "platform_user_id": {
+            "type": "string"
+          },
+          "to_phone": {
+            "type": "string",
+            "description": "E.164. SMS and WhatsApp only. Starts a conversation if none exists."
+          },
+          "message_text": {
+            "type": "string",
+            "description": "For send_message."
+          },
+          "template_name": {
+            "type": "string",
+            "description": "WhatsApp template, outside the 24-hour window."
+          },
+          "template_language": {
+            "type": "string"
+          },
+          "template_components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "target_message_id": {
+            "type": "string",
+            "description": "For react and unreact."
+          },
+          "reaction": {
+            "type": "string",
+            "description": "For react, for example love."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "assign_conversation",
+      "description": "Assign or unassign a conversation. Body {\"assigned_to\": <team member id>} to assign, {\"assigned_to\": null} to unassign. Moves pending or escalated to active and adds a system line to the transcript, exactly like the inbox.",
+      "method": "POST",
+      "path": "/conversations/{id}/assign",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "assigned_to"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "assigned_to": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "A team member id, or null to unassign."
+          }
+        },
+        "required": [
+          "id",
+          "assigned_to"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_team_members",
+      "description": "List team members. Everyone a conversation can be assigned to. Not paginated. channels is null when the member can see every channel. Use it to find the member id for assign_conversation.",
+      "method": "GET",
+      "path": "/team",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_blocked_users",
+      "description": "List blocked users. Everyone the AI is currently refusing to answer. Not paginated.",
+      "method": "GET",
+      "path": "/blocked-users",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "block_user",
+      "description": "Block a user. Send exactly one of ig_username (blocks by Instagram handle, even before they have messaged) or conversation_id (blocks the person behind an existing conversation on any Meta channel).",
+      "method": "POST",
+      "path": "/blocked-users",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "ig_username",
+          "conversation_id"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ig_username": {
+            "type": "string",
+            "description": "Instagram handle, with or without @."
+          },
+          "conversation_id": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unblock_user",
+      "description": "Unblock a user. The AI answers their next message. The block row is kept for audit, so the id is not reusable.",
+      "method": "DELETE",
+      "path": "/blocked-users/{id}",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_opt_outs",
+      "description": "List opt-outs. Who has opted out, on which channel, when, and how. starting_after is an opaque cursor here, not an id.",
+      "method": "GET",
+      "path": "/opt-outs",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "channel",
+          "status",
+          "scope",
+          "since",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "facebook",
+              "instagram",
+              "sms",
+              "telegram",
+              "whatsapp"
+            ],
+            "description": "Channel."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "opted_out",
+              "opted_in"
+            ],
+            "description": "opted_in returns SMS rows only; Meta channels are always opted_out."
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "comment_dm",
+              "broadcast",
+              "all"
+            ],
+            "description": "Meta channels only."
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 UTC on recorded_at."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_appointments",
+      "description": "List appointments. In-chat bookings, newest first.",
+      "method": "GET",
+      "path": "/appointments",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "status",
+          "conversation_id",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Exact match on the stored status, for example confirmed or cancelled. Not validated."
+          },
+          "conversation_id": {
+            "type": "integer",
+            "description": "Appointments booked in one conversation."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_availability",
+      "description": "Get availability. The open slots for one day, from business hours, the service duration, the buffer, the minimum notice and existing bookings. What the bot and the portal picker offer. Empty on a closed day.",
+      "method": "GET",
+      "path": "/appointments/availability",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "date",
+          "service_type",
+          "city",
+          "state"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "YYYY-MM-DD in the account timezone."
+          },
+          "service_type": {
+            "type": "string",
+            "description": "A bookable service name; sets the slot length. Default 30 minutes."
+          },
+          "city": {
+            "type": "string",
+            "description": "Location-specific availability."
+          },
+          "state": {
+            "type": "string",
+            "description": "Location-specific availability."
+          }
+        },
+        "required": [
+          "date"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_appointment",
+      "description": "Get an appointment. One appointment by id.",
+      "method": "GET",
+      "path": "/appointments/{id}",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_appointment",
+      "description": "Update an appointment. Edit details and/or status, the portal's edit form. Send only what changes. Detail edits are pushed to the connected calendars; a status change to cancelled removes the calendar event and fires appointment.cancelled. To move the time use reschedule, which checks the slot. Edits are pushed to the connected calendar, and a status of cancelled removes the event. To move the time, use reschedule_appointment.",
+      "method": "PATCH",
+      "path": "/appointments/{id}",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "status",
+          "customer",
+          "location",
+          "service_type",
+          "duration_minutes",
+          "timezone",
+          "vehicle_info",
+          "cost",
+          "notes"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "completed",
+              "cancelled",
+              "no_show"
+            ]
+          },
+          "customer": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "phone": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "address": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "state": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "service_type": {
+            "type": "string"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 1440
+          },
+          "timezone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "vehicle_info": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cost": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "book_appointment",
+      "description": "Book an appointment. Books a slot the way the portal calendar does: the account's required customer fields are enforced (422 missing_fields), the time must be in the future and free (409 slot_unavailable), the appointment is confirmed at once, synced to Google Calendar and GoHighLevel when connected, and appointment.booked fires. Attach conversation_id to book for a person you are chatting with; they get the confirmation DM unless send_confirmation is false. date and time are the customer's wall-clock time in timezone (the account timezone when omitted).",
+      "method": "POST",
+      "path": "/appointments",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "date",
+          "time",
+          "customer",
+          "service_type",
+          "duration_minutes",
+          "conversation_id",
+          "send_confirmation",
+          "location",
+          "timezone",
+          "vehicle_info",
+          "cost",
+          "notes"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "YYYY-MM-DD."
+          },
+          "time": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "description": "HH:MM, 24-hour, in timezone."
+          },
+          "customer": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "phone": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "address": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "service_type": {
+            "type": "string",
+            "default": "consultation",
+            "description": "A bookable service name from ai/config booking.bookable_services, or free text."
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 1440,
+            "description": "Defaults to the service's duration, else 30."
+          },
+          "conversation_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Book for the person in this conversation; sets the channel and enables the confirmation DM."
+          },
+          "send_confirmation": {
+            "type": "boolean",
+            "default": true,
+            "description": "With conversation_id: DM the customer the confirmation."
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "state": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "timezone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "IANA name. Default: the account timezone."
+          },
+          "vehicle_info": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cost": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "date",
+          "time",
+          "customer"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "reschedule_appointment",
+      "description": "Reschedule an appointment. Moves a pending or confirmed appointment to a new date and time after checking the slot is free, updates the connected calendars, fires appointment.rescheduled, and DMs the customer when the booking came from a conversation. 409 slot_unavailable when the slot is taken, 409 not_active when the appointment is not pending or confirmed.",
+      "method": "POST",
+      "path": "/appointments/{id}/reschedule",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "date",
+          "time"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "time": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "description": "HH:MM, 24-hour, in the appointment timezone."
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "time"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cancel_appointment",
+      "description": "Cancel an appointment. Sets status cancelled, removes the Google Calendar and GoHighLevel events, fires appointment.cancelled. 409 already_cancelled if it already is. Send {} as the body.",
+      "method": "POST",
+      "path": "/appointments/{id}/cancel",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_flows",
+      "description": "List flows. Automation flows with lifetime stats. The canvas definition is not exposed.",
+      "method": "GET",
+      "path": "/flows",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "status",
+          "trigger_type",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "paused"
+            ],
+            "description": "Flow status."
+          },
+          "trigger_type": {
+            "type": "string",
+            "enum": [
+              "keyword",
+              "first_message",
+              "comment_trigger",
+              "button_tap"
+            ],
+            "description": "What starts the flow."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_flow",
+      "description": "Get a flow. One flow by id.",
+      "method": "GET",
+      "path": "/flows/{id}",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_flow_definition",
+      "description": "Get a flow definition. The definition alone: the draft when one exists, else the published version.",
+      "method": "GET",
+      "path": "/flows/{id}/definition",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_flow_node_catalogue",
+      "description": "Get the node catalogue. Everything needed to build a flow: every trigger source (channels it can fire on, whether it needs keywords, its config), every node type (input and output ports, config fields and allowed values, which are terminal), the enums, the placeholders, the structural rules, and this account's live options: custom fields, tags, bookable services, flows (for goto_flow), comment triggers (for linked comment flows), the plan's node and flow caps. Read it before composing a definition. Read this before writing a flow definition. It lists every node type, its config fields and output ports.",
+      "method": "GET",
+      "path": "/flows/nodes",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "validate_flow",
+      "description": "Validate a flow definition. Dry run of the same validation create and update apply. Nothing is saved. Validate a definition without saving it. Loop on errors[] until it is clean, then call create_flow.",
+      "method": "POST",
+      "path": "/flows/validate",
+      "scope": "write",
+      "kind": "read",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "definition",
+          "channels"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "definition": {
+            "type": "object",
+            "properties": {
+              "trigger": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "dm",
+                      "comment",
+                      "ad_referral",
+                      "story_mention",
+                      "story_reply",
+                      "ig_reel_share",
+                      "ig_post_share",
+                      "ig_unsupported_attachment",
+                      "image_received",
+                      "audio_received",
+                      "video_received",
+                      "file_received",
+                      "ai_intent"
+                    ],
+                    "default": "dm"
+                  },
+                  "keywords": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "dm source: any of these starts the flow."
+                  },
+                  "match_type": {
+                    "type": "string",
+                    "enum": [
+                      "contains",
+                      "exact"
+                    ],
+                    "default": "contains"
+                  },
+                  "comment_trigger_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "comment source, linked mode: a standalone comment trigger id."
+                  },
+                  "comment_keywords": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "comment source, native mode."
+                  },
+                  "comment_match_type": {
+                    "type": "string",
+                    "enum": [
+                      "contains",
+                      "exact"
+                    ]
+                  },
+                  "comment_post_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ad_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "intent_description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "source"
+                ],
+                "description": "What starts the flow. Also the config of node \"1\". Per-source fields are in GET /flows/nodes sources.*.config."
+              },
+              "nodes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "String id; \"1\" is the trigger."
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "trigger",
+                        "message",
+                        "collect_input",
+                        "condition",
+                        "action",
+                        "delay",
+                        "ai_step",
+                        "ai_handoff",
+                        "randomizer",
+                        "book_appointment",
+                        "http_request",
+                        "send_email",
+                        "goto_flow"
+                      ]
+                    },
+                    "config": {
+                      "type": "object",
+                      "description": "Per type; see GET /flows/nodes nodes.<type>.config."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type"
+                  ]
+                },
+                "minItems": 2
+              },
+              "edges": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string"
+                    },
+                    "from_port": {
+                      "type": "string",
+                      "description": "One of the source node's output ports, for example output_1, output_2, output_timeout.",
+                      "default": "output_1"
+                    },
+                    "to": {
+                      "type": "string"
+                    },
+                    "to_port": {
+                      "type": "string",
+                      "enum": [
+                        "input_1"
+                      ],
+                      "default": "input_1"
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "trigger",
+              "nodes",
+              "edges"
+            ],
+            "description": "A flow as a graph. Read GET /flows/nodes for every node type, port and config field."
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "facebook",
+                "instagram",
+                "whatsapp"
+              ]
+            },
+            "default": [
+              "facebook",
+              "instagram"
+            ]
+          }
+        },
+        "required": [
+          "definition"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_flow",
+      "description": "Create a flow. Creates a DRAFT from a definition (see GET /flows/nodes for the catalogue). The definition is validated first: structure, per-node config, the plan's node cap, channel compatibility with the trigger source, keyword collisions with active flows, and references to custom fields, comment triggers and other flows (422 invalid_definition with errors[] and warnings[]). Nothing runs until you publish and activate. The visual builder lays the nodes out the first time the flow is opened.",
+      "method": "POST",
+      "path": "/flows",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "name",
+          "definition",
+          "channels",
+          "tag_id"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "definition": {
+            "type": "object",
+            "properties": {
+              "trigger": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "dm",
+                      "comment",
+                      "ad_referral",
+                      "story_mention",
+                      "story_reply",
+                      "ig_reel_share",
+                      "ig_post_share",
+                      "ig_unsupported_attachment",
+                      "image_received",
+                      "audio_received",
+                      "video_received",
+                      "file_received",
+                      "ai_intent"
+                    ],
+                    "default": "dm"
+                  },
+                  "keywords": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "dm source: any of these starts the flow."
+                  },
+                  "match_type": {
+                    "type": "string",
+                    "enum": [
+                      "contains",
+                      "exact"
+                    ],
+                    "default": "contains"
+                  },
+                  "comment_trigger_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "comment source, linked mode: a standalone comment trigger id."
+                  },
+                  "comment_keywords": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "comment source, native mode."
+                  },
+                  "comment_match_type": {
+                    "type": "string",
+                    "enum": [
+                      "contains",
+                      "exact"
+                    ]
+                  },
+                  "comment_post_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ad_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "intent_description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "source"
+                ],
+                "description": "What starts the flow. Also the config of node \"1\". Per-source fields are in GET /flows/nodes sources.*.config."
+              },
+              "nodes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "String id; \"1\" is the trigger."
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "trigger",
+                        "message",
+                        "collect_input",
+                        "condition",
+                        "action",
+                        "delay",
+                        "ai_step",
+                        "ai_handoff",
+                        "randomizer",
+                        "book_appointment",
+                        "http_request",
+                        "send_email",
+                        "goto_flow"
+                      ]
+                    },
+                    "config": {
+                      "type": "object",
+                      "description": "Per type; see GET /flows/nodes nodes.<type>.config."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type"
+                  ]
+                },
+                "minItems": 2
+              },
+              "edges": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string"
+                    },
+                    "from_port": {
+                      "type": "string",
+                      "description": "One of the source node's output ports, for example output_1, output_2, output_timeout.",
+                      "default": "output_1"
+                    },
+                    "to": {
+                      "type": "string"
+                    },
+                    "to_port": {
+                      "type": "string",
+                      "enum": [
+                        "input_1"
+                      ],
+                      "default": "input_1"
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "trigger",
+              "nodes",
+              "edges"
+            ],
+            "description": "A flow as a graph. Read GET /flows/nodes for every node type, port and config field."
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "facebook",
+                "instagram",
+                "whatsapp"
+              ]
+            },
+            "default": [
+              "facebook",
+              "instagram"
+            ],
+            "description": "Must be channels the trigger source can fire on."
+          },
+          "tag_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Tag applied to people who enter the flow. Pro plans and above; ignored otherwise."
+          }
+        },
+        "required": [
+          "name",
+          "definition"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_flow",
+      "description": "Update a flow. Rename, retarget channels, set the tag, and/or replace the definition. A new definition is saved as the DRAFT and validated the same way as on create; the live version keeps running until you publish. Positions are dropped when the definition changes (the builder re-lays it out).",
+      "method": "PATCH",
+      "path": "/flows/{id}",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "name",
+          "definition",
+          "channels",
+          "tag_id"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "definition": {
+            "type": "object",
+            "properties": {
+              "trigger": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "dm",
+                      "comment",
+                      "ad_referral",
+                      "story_mention",
+                      "story_reply",
+                      "ig_reel_share",
+                      "ig_post_share",
+                      "ig_unsupported_attachment",
+                      "image_received",
+                      "audio_received",
+                      "video_received",
+                      "file_received",
+                      "ai_intent"
+                    ],
+                    "default": "dm"
+                  },
+                  "keywords": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "dm source: any of these starts the flow."
+                  },
+                  "match_type": {
+                    "type": "string",
+                    "enum": [
+                      "contains",
+                      "exact"
+                    ],
+                    "default": "contains"
+                  },
+                  "comment_trigger_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "comment source, linked mode: a standalone comment trigger id."
+                  },
+                  "comment_keywords": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "comment source, native mode."
+                  },
+                  "comment_match_type": {
+                    "type": "string",
+                    "enum": [
+                      "contains",
+                      "exact"
+                    ]
+                  },
+                  "comment_post_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ad_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "intent_description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "source"
+                ],
+                "description": "What starts the flow. Also the config of node \"1\". Per-source fields are in GET /flows/nodes sources.*.config."
+              },
+              "nodes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "String id; \"1\" is the trigger."
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "trigger",
+                        "message",
+                        "collect_input",
+                        "condition",
+                        "action",
+                        "delay",
+                        "ai_step",
+                        "ai_handoff",
+                        "randomizer",
+                        "book_appointment",
+                        "http_request",
+                        "send_email",
+                        "goto_flow"
+                      ]
+                    },
+                    "config": {
+                      "type": "object",
+                      "description": "Per type; see GET /flows/nodes nodes.<type>.config."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type"
+                  ]
+                },
+                "minItems": 2
+              },
+              "edges": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string"
+                    },
+                    "from_port": {
+                      "type": "string",
+                      "description": "One of the source node's output ports, for example output_1, output_2, output_timeout.",
+                      "default": "output_1"
+                    },
+                    "to": {
+                      "type": "string"
+                    },
+                    "to_port": {
+                      "type": "string",
+                      "enum": [
+                        "input_1"
+                      ],
+                      "default": "input_1"
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "trigger",
+              "nodes",
+              "edges"
+            ],
+            "description": "A flow as a graph. Read GET /flows/nodes for every node type, port and config field."
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "facebook",
+                "instagram",
+                "whatsapp"
+              ]
+            }
+          },
+          "tag_id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "publish_flow",
+      "description": "Publish a flow draft. Makes the draft the live definition (new version). Runs the full validation and keyword-conflict check (422 invalid_definition). Publishing a flow that was never live also activates it when the plan has a free live-flow slot (403 plan_limit_reached otherwise). Fires flow.published, and flow.activated when it went live. Send {} as the body.",
+      "method": "POST",
+      "path": "/flows/{id}/publish",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "activate_flow",
+      "description": "Activate a flow. Sets the flow live. Publishes the draft first when there is one, exactly like the builder's toggle. Plans cap live flows (403 plan_limit_reached). Send {} as the body.",
+      "method": "POST",
+      "path": "/flows/{id}/activate",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "pause_flow",
+      "description": "Pause a flow. Stops the flow and cancels its open sessions. A linked comment trigger is paused with it. Fires flow.paused. Send {} as the body.",
+      "method": "POST",
+      "path": "/flows/{id}/pause",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "duplicate_flow",
+      "description": "Duplicate a flow. Copies the flow as a new draft. Send {} as the body.",
+      "method": "POST",
+      "path": "/flows/{id}/duplicate",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "discard_flow_draft",
+      "description": "Discard a flow draft. Throws away the unpublished draft; the live version stands. Send {} as the body.",
+      "method": "POST",
+      "path": "/flows/{id}/discard-draft",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "delete_flow",
+      "description": "Delete a flow. Deletes the flow, its versions, sessions and media. A linked comment trigger is detached and paused. Permanent: the flow, its versions, sessions and analytics are gone. Confirm with the user, and prefer pause_flow.",
+      "method": "DELETE",
+      "path": "/flows/{id}",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_flow_analytics",
+      "description": "Get flow analytics. The builder's Analytics panel for one flow: runs, completions, completion rate and median time for the window, the same numbers for the preceding window (comparison), lifetime totals, outcomes (emails and phones collected, leads marked, bookings, link clicks, handoffs), per-node reach, continue, response and loss rates, and per-port branch splits. Analytics are per published version: version defaults to the current one; versions lists the others. Only sessions with tracking are counted; other_version_runs_excluded says how many ran under another version in the window.",
+      "method": "GET",
+      "path": "/flows/{id}/analytics",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [
+          "range",
+          "channel",
+          "version"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "range": {
+            "type": "string",
+            "enum": [
+              "7d",
+              "30d",
+              "90d",
+              "all"
+            ],
+            "default": "30d",
+            "description": "Window: 7d, 30d, 90d or all. Default 30d. Comparison is null for all."
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "facebook",
+              "instagram",
+              "whatsapp"
+            ],
+            "description": "Only sessions on this channel."
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "A published version number from versions[]. Default: the current version."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_flow_sessions",
+      "description": "List flow sessions. One session per person per run of a flow. Attribution carries post_id, comment_id and matched_keyword only, never what anyone typed.",
+      "method": "GET",
+      "path": "/flow-sessions",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "flow_id",
+          "status",
+          "channel",
+          "contact_id",
+          "updated_since",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "flow_id": {
+            "type": "integer",
+            "description": "One flow."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "waiting_input",
+              "delayed",
+              "completed",
+              "expired",
+              "cancelled"
+            ],
+            "description": "Session status."
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "facebook",
+              "instagram",
+              "whatsapp"
+            ],
+            "description": "Session channel."
+          },
+          "contact_id": {
+            "type": "integer",
+            "description": "Sessions for one contact. Unknown contact is a 404."
+          },
+          "updated_since": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 UTC."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_flow_session",
+      "description": "Get a flow session. One session by id.",
+      "method": "GET",
+      "path": "/flow-sessions/{id}",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_flow_session_events",
+      "description": "List events for a session. The ordered path one person took through a flow, oldest first.",
+      "method": "GET",
+      "path": "/flow-sessions/{id}/events",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [
+          "type",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "session_started",
+              "node_entered",
+              "node_exited",
+              "branch_selected",
+              "input_received",
+              "link_clicked",
+              "outcome_achieved",
+              "session_completed",
+              "session_expired",
+              "session_cancelled",
+              "session_reactivated"
+            ],
+            "description": "Event type."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 100,
+            "description": "1 to 100, default 100."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_flow_events",
+      "description": "List flow events across sessions. Every session event in one feed, oldest first. Ids only increase, so starting_after is a durable high-water mark for a sync loop. Use flow_session, not session_id, to filter by session.",
+      "method": "GET",
+      "path": "/flow-events",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "flow_id",
+          "flow_session",
+          "type",
+          "node_key",
+          "since",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "flow_id": {
+            "type": "integer",
+            "description": "One flow."
+          },
+          "flow_session": {
+            "type": "integer",
+            "description": "One session."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "session_started",
+              "node_entered",
+              "node_exited",
+              "branch_selected",
+              "input_received",
+              "link_clicked",
+              "outcome_achieved",
+              "session_completed",
+              "session_expired",
+              "session_cancelled",
+              "session_reactivated"
+            ],
+            "description": "Event type."
+          },
+          "node_key": {
+            "type": "string",
+            "description": "One step of the flow."
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 UTC on occurred_at."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 100,
+            "description": "1 to 100, default 100."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_comment_triggers",
+      "description": "List comment triggers. Standalone comment triggers, newest first, each with the flows linked to it. A flow whose own trigger node carries keywords (native) is not a trigger and appears only on /flows as a comment source with mode native.",
+      "method": "GET",
+      "path": "/comment-triggers",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "platform",
+          "source_type",
+          "active",
+          "post_id",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "instagram",
+              "facebook"
+            ],
+            "description": "Triggers that fire on this channel (a both trigger matches either)."
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "comment",
+              "story",
+              "both",
+              "live"
+            ],
+            "description": "What the trigger listens to."
+          },
+          "active": {
+            "type": "boolean",
+            "description": "true for live triggers only, false for paused."
+          },
+          "post_id": {
+            "type": "string",
+            "description": "Triggers scoped to this post."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_comment_trigger",
+      "description": "Get a comment trigger. One trigger by id with its linked flows.",
+      "method": "GET",
+      "path": "/comment-triggers/{id}",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "simulate_comment",
+      "description": "Simulate a comment. Dry run: what would happen if this text were commented on this channel and post. Runs the live matcher over every trigger in id order and reports the first that fires, the reason each other one did not, the linked flow that would start, or the native flow that would answer if no trigger fires. Nothing is sent and nothing is recorded. Per-person rules (opt-out, blocklist, once-per-user) are not simulated. Dry run, nothing is sent. Use it to check a trigger matches before and after changing it.",
+      "method": "GET",
+      "path": "/comment-triggers/simulate",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "platform",
+          "text",
+          "source_type",
+          "post_id"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "instagram",
+              "facebook"
+            ],
+            "description": "Channel the comment would be on."
+          },
+          "text": {
+            "type": "string",
+            "description": "The comment text."
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "comment",
+              "story",
+              "live"
+            ],
+            "default": "comment",
+            "description": "Default comment."
+          },
+          "post_id": {
+            "type": "string",
+            "description": "The post the comment would be on. Needed for post-scoped triggers to match."
+          }
+        },
+        "required": [
+          "platform",
+          "text"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_comment_trigger",
+      "description": "Create a comment trigger. Creates a trigger. It goes live at once unless the plan's live-trigger cap is reached, in which case it is saved paused and created_paused is true (never refused). Buttons are optional, up to three. A reply button is still worth adding: its tap opens the conversation so follow-ups can be sent. Story and Live triggers are Instagram only and never post-scoped. Send draft: true to save an incomplete trigger paused, skipping the template and button requirements. It goes live at once and starts DMing real commenters. Confirm with the user first, or send draft: true to save it paused. A paused trigger stays paused through edits until you send active: true.",
+      "method": "POST",
+      "path": "/comment-triggers",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "name",
+          "platform",
+          "source_type",
+          "post_id",
+          "post_url",
+          "keywords",
+          "match_type",
+          "exclude_keywords",
+          "response_mode",
+          "public_replies",
+          "dm_templates",
+          "dm_use_ai",
+          "dm_ai_goal",
+          "dm_image_url",
+          "dm_file_url",
+          "hide_comment_after_dm",
+          "buttons",
+          "tag_id",
+          "draft"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "instagram",
+              "facebook",
+              "both"
+            ],
+            "default": "both"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "comment",
+              "story",
+              "both",
+              "live"
+            ],
+            "default": "comment",
+            "description": "comment = post and Reel comments; story = replies to your stories; both = either; live = comments during an Instagram Live. story and live are Instagram only."
+          },
+          "post_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Scope to one post (an id from GET /recent-posts). Null means every post. Ignored for story and live."
+          },
+          "post_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Label only; post_id is what scopes the trigger."
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "Any one of these matches."
+          },
+          "match_type": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "contains",
+              "fuzzy"
+            ],
+            "default": "contains",
+            "description": "exact = whole word; contains = anywhere in the text; fuzzy = tolerates a typo or two."
+          },
+          "exclude_keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "If any of these appear the trigger does not fire."
+          },
+          "response_mode": {
+            "type": "string",
+            "enum": [
+              "both",
+              "public_only",
+              "dm_only"
+            ],
+            "default": "both",
+            "description": "both = public reply and DM; public_only; dm_only."
+          },
+          "public_replies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "description": "Up to five variations, one is picked per fire. {name} is the commenter. Required when the mode includes a public reply."
+          },
+          "dm_templates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "description": "Up to five DM variations. Required when the mode includes a DM unless dm_use_ai is true."
+          },
+          "dm_use_ai": {
+            "type": "boolean",
+            "description": "Let the AI write the DM from dm_ai_goal, the knowledge base and the configured tone. Needs dm_ai_goal."
+          },
+          "dm_ai_goal": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What the AI-written DM should achieve."
+          },
+          "dm_image_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "https image attached to the DM."
+          },
+          "dm_file_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "https PDF attached to the DM."
+          },
+          "hide_comment_after_dm": {
+            "type": "boolean",
+            "description": "Hide the comment once the DM is sent (post comments only)."
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "maxLength": 20,
+                  "description": "Button label, 20 characters max (a Meta limit)."
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "text",
+                    "url"
+                  ],
+                  "default": "text"
+                },
+                "response": {
+                  "type": "string",
+                  "maxLength": 900,
+                  "description": "text buttons: the message sent when tapped. Required for text."
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri",
+                  "description": "url buttons: where the button opens. Required for url."
+                }
+              },
+              "required": [
+                "title"
+              ]
+            },
+            "maxItems": 3,
+            "description": "Buttons under the DM. Optional, three at most."
+          },
+          "tag_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Tag applied to the commenter when the trigger fires. Pro plans and above; silently ignored below."
+          },
+          "draft": {
+            "type": "boolean",
+            "description": "Save incomplete, paused. Skips the template and button requirements."
+          }
+        },
+        "required": [
+          "name",
+          "keywords"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_comment_trigger",
+      "description": "Update a comment trigger. Send only what should change; the rest is kept and the whole trigger is re-validated. active: true activates (refused with plan_limit_reached at the live cap, or flow_conflict if the linked flows are not ready); active: false pauses and pauses the linked flows. Changing button titles or types on a trigger with linked flows pauses those flows and the trigger for branch review; the response carries flow_impact. Edits a trigger that may be live. The whole trigger is re-validated, so a draft needs its DM text and a button before any edit saves. It never switches a trigger on unless you send active: true; confirm with the user before you do.",
+      "method": "PATCH",
+      "path": "/comment-triggers/{id}",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "name",
+          "platform",
+          "source_type",
+          "post_id",
+          "post_url",
+          "keywords",
+          "match_type",
+          "exclude_keywords",
+          "response_mode",
+          "public_replies",
+          "dm_templates",
+          "dm_use_ai",
+          "dm_ai_goal",
+          "dm_image_url",
+          "dm_file_url",
+          "hide_comment_after_dm",
+          "buttons",
+          "tag_id",
+          "active"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "instagram",
+              "facebook",
+              "both"
+            ],
+            "default": "both"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "comment",
+              "story",
+              "both",
+              "live"
+            ],
+            "default": "comment",
+            "description": "comment = post and Reel comments; story = replies to your stories; both = either; live = comments during an Instagram Live. story and live are Instagram only."
+          },
+          "post_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Scope to one post (an id from GET /recent-posts). Null means every post. Ignored for story and live."
+          },
+          "post_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Label only; post_id is what scopes the trigger."
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "Any one of these matches."
+          },
+          "match_type": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "contains",
+              "fuzzy"
+            ],
+            "default": "contains",
+            "description": "exact = whole word; contains = anywhere in the text; fuzzy = tolerates a typo or two."
+          },
+          "exclude_keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "If any of these appear the trigger does not fire."
+          },
+          "response_mode": {
+            "type": "string",
+            "enum": [
+              "both",
+              "public_only",
+              "dm_only"
+            ],
+            "default": "both",
+            "description": "both = public reply and DM; public_only; dm_only."
+          },
+          "public_replies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "description": "Up to five variations, one is picked per fire. {name} is the commenter. Required when the mode includes a public reply."
+          },
+          "dm_templates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "description": "Up to five DM variations. Required when the mode includes a DM unless dm_use_ai is true."
+          },
+          "dm_use_ai": {
+            "type": "boolean",
+            "description": "Let the AI write the DM from dm_ai_goal, the knowledge base and the configured tone. Needs dm_ai_goal."
+          },
+          "dm_ai_goal": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What the AI-written DM should achieve."
+          },
+          "dm_image_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "https image attached to the DM."
+          },
+          "dm_file_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "https PDF attached to the DM."
+          },
+          "hide_comment_after_dm": {
+            "type": "boolean",
+            "description": "Hide the comment once the DM is sent (post comments only)."
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "maxLength": 20,
+                  "description": "Button label, 20 characters max (a Meta limit)."
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "text",
+                    "url"
+                  ],
+                  "default": "text"
+                },
+                "response": {
+                  "type": "string",
+                  "maxLength": 900,
+                  "description": "text buttons: the message sent when tapped. Required for text."
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri",
+                  "description": "url buttons: where the button opens. Required for url."
+                }
+              },
+              "required": [
+                "title"
+              ]
+            },
+            "maxItems": 3,
+            "description": "Buttons under the DM. Optional, three at most."
+          },
+          "tag_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Tag applied to the commenter when the trigger fires. Pro plans and above; silently ignored below."
+          },
+          "active": {
+            "type": "boolean",
+            "description": "true activates, false pauses."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "duplicate_comment_trigger",
+      "description": "Duplicate a comment trigger. Copies every setting into a new trigger named \"(Copy)\", paused, with fresh stats. Activate it with PATCH active: true. Send Content-Type: application/json with an empty object body; the server refuses a bodiless POST.",
+      "method": "POST",
+      "path": "/comment-triggers/{id}/duplicate",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "delete_comment_trigger",
+      "description": "Delete a comment trigger. Soft delete: the trigger stops firing and disappears from lists, its stats are kept, and any linked flows are detached and paused (detached_flows says how many).",
+      "method": "DELETE",
+      "path": "/comment-triggers/{id}",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_comment_trigger_stats",
+      "description": "Get comment trigger stats. Lifetime counters for one trigger: fires, public replies, DMs (and how many were AI-written), link clicks, unique people, split by channel.",
+      "method": "GET",
+      "path": "/comment-triggers/{id}/stats",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_recent_posts",
+      "description": "List recent posts. Recent posts and Reels on the connected Instagram or Facebook account, newest first, straight from Meta. Use an id as post_id when creating a trigger scoped to one post. 409 not_connected when that channel is not connected.",
+      "method": "GET",
+      "path": "/recent-posts",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "platform",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "instagram",
+              "facebook"
+            ],
+            "default": "instagram",
+            "description": "Which account. Default instagram."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 25,
+            "description": "1 to 50. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page (a Meta cursor)."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_handled_comments",
+      "description": "List handled comments. Comments the AI Comment Manager handled, newest first, kept 30 days. Each carries the comment, its sentiment, what moderation did, the AI draft, and what happened to the reply. status=pending is the approval queue.",
+      "method": "GET",
+      "path": "/comments",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "status",
+          "channel",
+          "post_id",
+          "since",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected",
+              "sent",
+              "failed",
+              "skipped",
+              "moderated"
+            ],
+            "description": "Where the comment is."
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "instagram",
+              "facebook"
+            ],
+            "description": "instagram or facebook."
+          },
+          "post_id": {
+            "type": "string",
+            "description": "Comments on one post."
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 UTC on created_at."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_handled_comment",
+      "description": "Get a handled comment. One log row by id.",
+      "method": "GET",
+      "path": "/comments/{id}",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_comment_manager_stats",
+      "description": "Get comment manager stats. How many replies are waiting for approval, and today's and this month's handled, replied and moderated counts against the plan's caps.",
+      "method": "GET",
+      "path": "/comments/stats",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "approve_comment_reply",
+      "description": "Approve a reply. Posts the pending reply publicly under the comment, as the account. Send {\"text\": \"...\"} to post an edited reply instead of the AI draft; the draft is kept and edited becomes true. Only a pending comment can be approved (409 not_pending). A successful send counts against the plan's reply cap. Send Content-Type: application/json with an empty object when not editing; the server refuses a bodiless POST.",
+      "method": "POST",
+      "path": "/comments/{id}/approve",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "text"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "text": {
+            "type": "string",
+            "description": "Post this instead of the AI draft."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "reject_comment_reply",
+      "description": "Reject a reply. Drops the pending draft. Nothing is posted. Only a pending comment can be rejected (409 not_pending). Send an empty JSON object as the body.",
+      "method": "POST",
+      "path": "/comments/{id}/reject",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "bulk_approve_comment_replies",
+      "description": "Bulk approve replies. Sends the AI draft for each pending id, in order. Ids that are not pending or fail to send are counted in failed with a reason each. Up to 100 per call. Each approved reply is posted publicly under the comment. Confirm with the user.",
+      "method": "POST",
+      "path": "/comments/approve",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "ids"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 1,
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "bulk_reject_comment_replies",
+      "description": "Bulk reject replies. Drops the pending draft for each id. Ids that are not pending are ignored; rejected says how many changed.",
+      "method": "POST",
+      "path": "/comments/reject",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "ids"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 1,
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_posts",
+      "description": "List posts. Content Studio posts, newest first, each with its media. status=scheduled is the queue, status=failed needs attention.",
+      "method": "GET",
+      "path": "/posts",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "status",
+          "platform",
+          "post_type",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "scheduled",
+              "publishing",
+              "published",
+              "failed",
+              "cancelled"
+            ],
+            "description": "Where the post is."
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "instagram",
+              "facebook",
+              "both",
+              "tiktok",
+              "instagram_tiktok",
+              "facebook_tiktok",
+              "all"
+            ],
+            "description": "The stored platform value (a target set)."
+          },
+          "post_type": {
+            "type": "string",
+            "enum": [
+              "feed_post",
+              "carousel",
+              "reels",
+              "story"
+            ],
+            "description": "Post type."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_post",
+      "description": "Get a post. One post with its media, published ids and any error.",
+      "method": "GET",
+      "path": "/posts/{id}",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_posting_capabilities",
+      "description": "Get posting capabilities. What to read before building a post: which targets are connected, the TikTok creator's allowed privacy levels and video limit (live from TikTok, with a safe fallback), the post types, and the plan's monthly post cap and storage cap with current usage.",
+      "method": "GET",
+      "path": "/posts/capabilities",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_post",
+      "description": "Create a post. Creates a draft, or a scheduled post when scheduled_at is set (ISO-8601 with offset; a bare local time is read in the account timezone). Upload media afterwards with POST /posts/{id}/media, then publish or schedule. Rules: TikTok-only posts cannot be a carousel or story and carry no first comment or comment auto-reply; scheduling needs a caption (stories excepted) and a future time; the plan's monthly cap counts scheduled and published posts, a plain draft never holds a slot; a comment auto-reply on a scheduled post needs a free live comment-trigger slot (403 plan_limit_reached). tiktok.privacy_level must be one of the creator's options from GET /posts/capabilities.",
+      "method": "POST",
+      "path": "/posts",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "platform",
+          "post_type",
+          "caption",
+          "hashtags",
+          "scheduled_at",
+          "first_comment",
+          "collaborators",
+          "comment_auto_reply",
+          "cover_offset_ms",
+          "tiktok"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "instagram",
+              "facebook",
+              "both",
+              "tiktok",
+              "instagram_tiktok",
+              "facebook_tiktok",
+              "all"
+            ],
+            "default": "instagram",
+            "description": "A target set. both = Instagram + Facebook; all = all three."
+          },
+          "post_type": {
+            "type": "string",
+            "enum": [
+              "feed_post",
+              "carousel",
+              "reels",
+              "story"
+            ],
+            "default": "feed_post"
+          },
+          "caption": {
+            "type": "string",
+            "maxLength": 2200
+          },
+          "hashtags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Without the #."
+          },
+          "scheduled_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "ISO-8601. Null on PATCH turns a scheduled post back into a draft."
+          },
+          "first_comment": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Posted under the post right after publish. Instagram and Facebook only."
+          },
+          "collaborators": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3,
+            "description": "Instagram usernames to invite as collaborators. Instagram only."
+          },
+          "comment_auto_reply": {
+            "type": "object",
+            "properties": {
+              "keywords": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Required unless existing_trigger_id is set."
+              },
+              "match_type": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "contains",
+                  "fuzzy"
+                ],
+                "default": "contains"
+              },
+              "response_mode": {
+                "type": "string",
+                "enum": [
+                  "both",
+                  "public_only",
+                  "dm_only"
+                ],
+                "default": "both"
+              },
+              "public_replies": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 5
+              },
+              "dm_templates": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 5,
+                "description": "Required for a DM mode unless dm_use_ai is true."
+              },
+              "buttons": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "maxLength": 20
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "text",
+                        "url"
+                      ]
+                    },
+                    "response": {
+                      "type": "string",
+                      "maxLength": 900,
+                      "description": "text buttons: the message sent when tapped."
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "url buttons: where the button opens."
+                    },
+                    "followers_only": {
+                      "type": "boolean",
+                      "description": "text buttons, Instagram only: send the response only to people who follow you."
+                    },
+                    "gate_text": {
+                      "type": "string",
+                      "maxLength": 900,
+                      "description": "With followers_only: what a non-follower gets instead."
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ]
+                },
+                "maxItems": 3,
+                "description": "Optional, three at most. A fourth is refused."
+              },
+              "exclude_keywords": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "If any of these appear the reply does not fire."
+              },
+              "dm_use_ai": {
+                "type": "boolean",
+                "description": "Let the AI write the DM from dm_ai_goal."
+              },
+              "dm_ai_goal": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "What the AI-written DM should achieve."
+              },
+              "hide_comment_after_dm": {
+                "type": "boolean",
+                "description": "Hide the comment once the DM is sent."
+              },
+              "tag_id": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Tag applied to the commenter. Pro plans and above; ignored below."
+              },
+              "existing_trigger_id": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Use one of your comment triggers (source comment or both, not linked to a flow) instead of the fields above: at publish it is copied, scoped to this post, and enabled. Send it alone; a post in this mode returns only this field."
+              }
+            },
+            "description": "Becomes a comment trigger scoped to this post when it publishes, one per Instagram/Facebook target, with the comment trigger rules. Past the live-trigger cap it is saved paused (see comment_triggers). Instagram and Facebook only."
+          },
+          "cover_offset_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Reels: which frame is the cover."
+          },
+          "tiktok": {
+            "type": "object",
+            "properties": {
+              "privacy_level": {
+                "type": "string",
+                "enum": [
+                  "PUBLIC_TO_EVERYONE",
+                  "MUTUAL_FOLLOW_FRIENDS",
+                  "FOLLOWER_OF_CREATOR",
+                  "SELF_ONLY"
+                ],
+                "description": "Must be one of the creator's options from GET /posts/capabilities."
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 2200,
+                "description": "Defaults to the caption. Photo posts send the first 90 characters as the title."
+              },
+              "allow_comments": {
+                "type": "boolean"
+              },
+              "allow_duet": {
+                "type": "boolean"
+              },
+              "allow_stitch": {
+                "type": "boolean"
+              },
+              "content_disclosure": {
+                "type": "boolean",
+                "description": "The \"promote yourself or a third party\" disclosure. When true, set promote_self and/or promote_third_party."
+              },
+              "promote_self": {
+                "type": "boolean"
+              },
+              "promote_third_party": {
+                "type": "boolean"
+              },
+              "is_aigc": {
+                "type": "boolean",
+                "description": "Adds TikTok's AI-generated content label. Optional, default false."
+              }
+            },
+            "description": "TikTok settings. Ignored unless TikTok is a target."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_post",
+      "description": "Update a post. Edit a draft, scheduled or failed post (409 not_editable otherwise). Send only what changes; tiktok merges field by field; other arrays and objects replace. scheduled_at set moves or schedules it (post.scheduled fires); scheduled_at null turns a scheduled post back into a draft.",
+      "method": "PATCH",
+      "path": "/posts/{id}",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "platform",
+          "post_type",
+          "caption",
+          "hashtags",
+          "scheduled_at",
+          "first_comment",
+          "collaborators",
+          "comment_auto_reply",
+          "cover_offset_ms",
+          "tiktok"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "instagram",
+              "facebook",
+              "both",
+              "tiktok",
+              "instagram_tiktok",
+              "facebook_tiktok",
+              "all"
+            ],
+            "default": "instagram",
+            "description": "A target set. both = Instagram + Facebook; all = all three."
+          },
+          "post_type": {
+            "type": "string",
+            "enum": [
+              "feed_post",
+              "carousel",
+              "reels",
+              "story"
+            ],
+            "default": "feed_post"
+          },
+          "caption": {
+            "type": "string",
+            "maxLength": 2200
+          },
+          "hashtags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Without the #."
+          },
+          "scheduled_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "ISO-8601. Null on PATCH turns a scheduled post back into a draft."
+          },
+          "first_comment": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Posted under the post right after publish. Instagram and Facebook only."
+          },
+          "collaborators": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3,
+            "description": "Instagram usernames to invite as collaborators. Instagram only."
+          },
+          "comment_auto_reply": {
+            "type": "object",
+            "properties": {
+              "keywords": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Required unless existing_trigger_id is set."
+              },
+              "match_type": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "contains",
+                  "fuzzy"
+                ],
+                "default": "contains"
+              },
+              "response_mode": {
+                "type": "string",
+                "enum": [
+                  "both",
+                  "public_only",
+                  "dm_only"
+                ],
+                "default": "both"
+              },
+              "public_replies": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 5
+              },
+              "dm_templates": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 5,
+                "description": "Required for a DM mode unless dm_use_ai is true."
+              },
+              "buttons": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "maxLength": 20
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "text",
+                        "url"
+                      ]
+                    },
+                    "response": {
+                      "type": "string",
+                      "maxLength": 900,
+                      "description": "text buttons: the message sent when tapped."
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "url buttons: where the button opens."
+                    },
+                    "followers_only": {
+                      "type": "boolean",
+                      "description": "text buttons, Instagram only: send the response only to people who follow you."
+                    },
+                    "gate_text": {
+                      "type": "string",
+                      "maxLength": 900,
+                      "description": "With followers_only: what a non-follower gets instead."
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ]
+                },
+                "maxItems": 3,
+                "description": "Optional, three at most. A fourth is refused."
+              },
+              "exclude_keywords": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "If any of these appear the reply does not fire."
+              },
+              "dm_use_ai": {
+                "type": "boolean",
+                "description": "Let the AI write the DM from dm_ai_goal."
+              },
+              "dm_ai_goal": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "What the AI-written DM should achieve."
+              },
+              "hide_comment_after_dm": {
+                "type": "boolean",
+                "description": "Hide the comment once the DM is sent."
+              },
+              "tag_id": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Tag applied to the commenter. Pro plans and above; ignored below."
+              },
+              "existing_trigger_id": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Use one of your comment triggers (source comment or both, not linked to a flow) instead of the fields above: at publish it is copied, scoped to this post, and enabled. Send it alone; a post in this mode returns only this field."
+              }
+            },
+            "description": "Becomes a comment trigger scoped to this post when it publishes, one per Instagram/Facebook target, with the comment trigger rules. Past the live-trigger cap it is saved paused (see comment_triggers). Instagram and Facebook only."
+          },
+          "cover_offset_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Reels: which frame is the cover."
+          },
+          "tiktok": {
+            "type": "object",
+            "properties": {
+              "privacy_level": {
+                "type": "string",
+                "enum": [
+                  "PUBLIC_TO_EVERYONE",
+                  "MUTUAL_FOLLOW_FRIENDS",
+                  "FOLLOWER_OF_CREATOR",
+                  "SELF_ONLY"
+                ],
+                "description": "Must be one of the creator's options from GET /posts/capabilities."
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 2200,
+                "description": "Defaults to the caption. Photo posts send the first 90 characters as the title."
+              },
+              "allow_comments": {
+                "type": "boolean"
+              },
+              "allow_duet": {
+                "type": "boolean"
+              },
+              "allow_stitch": {
+                "type": "boolean"
+              },
+              "content_disclosure": {
+                "type": "boolean",
+                "description": "The \"promote yourself or a third party\" disclosure. When true, set promote_self and/or promote_third_party."
+              },
+              "promote_self": {
+                "type": "boolean"
+              },
+              "promote_third_party": {
+                "type": "boolean"
+              },
+              "is_aigc": {
+                "type": "boolean",
+                "description": "Adds TikTok's AI-generated content label. Optional, default false."
+              }
+            },
+            "description": "TikTok settings. Ignored unless TikTok is a target."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "schedule_post",
+      "description": "Schedule a post. Sets or moves the publish time of a draft, failed or scheduled post. The scheduler publishes it within a minute of that time. Same rules as scheduling on create. post.scheduled fires.",
+      "method": "POST",
+      "path": "/posts/{id}/schedule",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "scheduled_at"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "scheduled_at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "publish_post",
+      "description": "Publish a post now. Publishes to every target at once, the portal's Publish Now. Needs a caption (stories excepted), media for any Instagram target, and two or more items for a carousel (400). A draft, scheduled or failed post can be published (409 not_editable otherwise). When a platform rejects it the post becomes failed and the call is 422 publish_failed with the post and per-platform results. post.published or post.failed fires either way. Send {} as the body.",
+      "method": "POST",
+      "path": "/posts/{id}/publish",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "unschedule_post",
+      "description": "Unschedule a post. Turns a scheduled post back into a draft. Send {} as the body.",
+      "method": "POST",
+      "path": "/posts/{id}/unschedule",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "retry_post",
+      "description": "Retry a failed post. Publishes a failed post again, up to the retry cap. Send {} as the body.",
+      "method": "POST",
+      "path": "/posts/{id}/retry",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "delete_post",
+      "description": "Delete a post. Removes the post and its media files. Published posts cannot be deleted (409 not_editable); the live post stays on the platform.",
+      "method": "DELETE",
+      "path": "/posts/{id}",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_competitors",
+      "description": "List tracked competitors. Every account you track, with the numbers from its latest stored snapshot, plus how many slots your plan allows. Free 1, Creator 3, Pro 5, Business 10. Whole set in one page. last_snapshot_date is null until the first refresh.",
+      "method": "GET",
+      "path": "/competitors",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_competitor",
+      "description": "Compare against one competitor. That competitor and your own account side by side, with the per-metric differences the portal shows. Stored snapshots, no Meta call.",
+      "method": "GET",
+      "path": "/competitors/{id}",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_competitor_leaderboard",
+      "description": "Get the leaderboard. Your account and every competitor ranked together: followers, engagement rate, posts per week, average likes and comments, follower growth per day and the content mix (reels, photos, carousels). This is the table behind the portal's Market Intel page. Stored snapshots, so it is instant and spends no Meta quota. Your account and every competitor ranked together. Start here for any \"how do I compare\" question.",
+      "method": "GET",
+      "path": "/market-intel/leaderboard",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "period"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "integer",
+            "enum": [
+              7,
+              30,
+              90
+            ],
+            "default": 30,
+            "description": "Window in days. Default 30."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_follower_history",
+      "description": "Get follower history. Follower count and engagement rate over the window, one series per account including your own, oldest point first. One point per day that a snapshot was taken, so gaps mean nobody refreshed that day.",
+      "method": "GET",
+      "path": "/market-intel/history",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "period"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "integer",
+            "enum": [
+              7,
+              30,
+              90
+            ],
+            "default": 30,
+            "description": "Window in days. Default 30."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_wins_and_opportunities",
+      "description": "Get wins and opportunities. The comparisons already computed against each competitor over the last 30 days: where you are ahead (wins) and where they are (opportunities), each with the metric and the size of the gap. Derived from stored snapshots, no AI involved.",
+      "method": "GET",
+      "path": "/market-intel/wins",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_audience_demographics",
+      "description": "Get audience demographics. The latest stored breakdown of your followers: gender and age as percentages, top countries and cities with counts, and followers online by hour when Instagram supplies it. 404 until the first refresh. Instagram withholds all of it for accounts under roughly 100 followers, which comes back as zeros rather than an error. Includes followers online by hour, which is what \"when should I post\" is answered from.",
+      "method": "GET",
+      "path": "/market-intel/audience",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_top_posts",
+      "description": "List your top posts. Your own recent posts with their stored performance: reach, impressions, likes, comments, saves, shares, video views, engagement rate and save rate. Newest first. Stored, so refresh first for current numbers.",
+      "method": "GET",
+      "path": "/market-intel/top-posts",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "limit"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 12,
+            "description": "1 to 50. Default 12."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_account_insights",
+      "description": "Get account insights. Reach, profile views, interactions, saves, shares and follows for your own account over the last 1, 7 or 30 days. This one calls Instagram live, so it takes a moment and counts against Meta's rate limit. 403 permission_required when the account was connected without the insights permission; reconnect it in the portal to fix that.",
+      "method": "GET",
+      "path": "/market-intel/insights",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "days"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer",
+            "enum": [
+              1,
+              7,
+              30
+            ],
+            "default": 7,
+            "description": "1, 7 or 30. Default 7."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "add_competitor",
+      "description": "Track a competitor. Looks the handle up through Meta and starts tracking it. The account must be a public Instagram business or creator account; personal and private accounts cannot be read by anyone through the API (422 invalid_param). At the plan cap this is 403 plan_limit_reached, and an account you already track is 409 conflict. The first snapshot is taken immediately.",
+      "method": "POST",
+      "path": "/competitors",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "username"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 30,
+            "description": "Instagram handle, with or without the leading @. Must be a public business or creator account."
+          }
+        },
+        "required": [
+          "username"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "remove_competitor",
+      "description": "Stop tracking a competitor. Frees the slot. History is kept, so re-adding the same handle picks up where it left off.",
+      "method": "DELETE",
+      "path": "/competitors/{id}",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "refresh_market_intel",
+      "description": "Refresh from Meta. Pulls current numbers from Meta for your account and every tracked competitor and writes today's snapshot, exactly like the portal's Refresh button. One Meta call per account, so it takes several seconds; every other Market Intel read serves the snapshots this writes. Five minutes are enforced between refreshes (429 too_soon carries retry_after_seconds). Send {} as the body. Slow: one Meta call per tracked account. Only call it when the stored snapshot is stale.",
+      "method": "POST",
+      "path": "/market-intel/refresh",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_faqs",
+      "description": "List FAQs. Question and answer pairs the AI answers from. Active only by default.",
+      "method": "GET",
+      "path": "/knowledge/faqs",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "include_inactive",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "include_inactive": {
+            "type": "boolean",
+            "description": "Include items switched off. Default false."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_faq",
+      "description": "Create an FAQ. Counts against the plan cap. The answer is embedded for retrieval right away; embedding_pending is true if indexing is still catching up.",
+      "method": "POST",
+      "path": "/knowledge/faqs",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "question",
+          "answer",
+          "keywords",
+          "category_id",
+          "active"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "answer": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "keywords": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000,
+            "description": "Comma-separated hints for matching."
+          },
+          "category_id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "question",
+          "answer"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_faq",
+      "description": "Update an FAQ. Partial update. Changing question, answer or keywords re-embeds it; changing only active does not.",
+      "method": "PATCH",
+      "path": "/knowledge/faqs/{id}",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "question",
+          "answer",
+          "keywords",
+          "category_id",
+          "active"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "answer": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "keywords": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000,
+            "description": "Comma-separated hints for matching."
+          },
+          "category_id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_services",
+      "description": "List services. Services and pricing the AI can quote and, with booking on, offer. Active only by default.",
+      "method": "GET",
+      "path": "/knowledge/services",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "include_inactive",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "include_inactive": {
+            "type": "boolean",
+            "description": "Include items switched off. Default false."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_knowledge_gaps",
+      "description": "List knowledge gaps. Questions the AI could not answer well, flagged by the gap detector with the customer message, the AI reply, a canonical form of the question, and a suggested answer and target. Open gaps by default; status=all for everything. Read-only: fix a gap with POST /knowledge/faqs or by editing identity.instructions, and dismiss it in the portal.",
+      "method": "GET",
+      "path": "/knowledge-gaps",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "status",
+          "signal_type",
+          "channel",
+          "since",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "open",
+              "resolved",
+              "dismissed",
+              "all"
+            ],
+            "default": "open",
+            "description": "Default open. Use all for every status."
+          },
+          "signal_type": {
+            "type": "string",
+            "enum": [
+              "no_knowledge",
+              "weak_match",
+              "negative_feedback",
+              "escalation"
+            ],
+            "description": "Why it was flagged."
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "facebook",
+              "instagram",
+              "sms",
+              "telegram",
+              "whatsapp"
+            ],
+            "description": "Channel the question came in on."
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 UTC on last_seen_at."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_knowledge_usage",
+      "description": "Get knowledge base usage. How many items exist against the plan cap, broken down by FAQs, services and documents, plus document storage. Check can_add before creating.",
+      "method": "GET",
+      "path": "/knowledge",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_faq",
+      "description": "Get an FAQ. One FAQ by id.",
+      "method": "GET",
+      "path": "/knowledge/faqs/{id}",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "delete_faq",
+      "description": "Delete an FAQ. Removes the FAQ and its embeddings.",
+      "method": "DELETE",
+      "path": "/knowledge/faqs/{id}",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_service",
+      "description": "Get a service. One service by id.",
+      "method": "GET",
+      "path": "/knowledge/services/{id}",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_service",
+      "description": "Create a service. Counts against the plan cap. is_virtual is honoured only when Google Calendar is connected and Meet links are on; otherwise it is stored as false. Images are added in the portal.",
+      "method": "POST",
+      "path": "/knowledge/services",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "name",
+          "description",
+          "price",
+          "currency",
+          "price_unit",
+          "duration_minutes",
+          "display_order",
+          "is_virtual",
+          "category_id",
+          "active"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ISO 4217 code such as USD or EUR. Null means the account default."
+          },
+          "price_unit": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "hourly",
+              "per_unit",
+              "quote"
+            ]
+          },
+          "duration_minutes": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "display_order": {
+            "type": "integer"
+          },
+          "is_virtual": {
+            "type": "boolean",
+            "description": "Bookings get a Google Meet link. Honoured only when Google Calendar is connected and Meet is on."
+          },
+          "category_id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "price"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_service",
+      "description": "Update a service. Partial update. Any content change re-embeds; changing only active does not. The service image is never touched by the API.",
+      "method": "PATCH",
+      "path": "/knowledge/services/{id}",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "name",
+          "description",
+          "price",
+          "currency",
+          "price_unit",
+          "duration_minutes",
+          "display_order",
+          "is_virtual",
+          "category_id",
+          "active"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ISO 4217 code such as USD or EUR. Null means the account default."
+          },
+          "price_unit": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "hourly",
+              "per_unit",
+              "quote"
+            ]
+          },
+          "duration_minutes": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "display_order": {
+            "type": "integer"
+          },
+          "is_virtual": {
+            "type": "boolean",
+            "description": "Bookings get a Google Meet link. Honoured only when Google Calendar is connected and Meet is on."
+          },
+          "category_id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "delete_service",
+      "description": "Delete a service. Removes the service, its embeddings and its image file.",
+      "method": "DELETE",
+      "path": "/knowledge/services/{id}",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_documents",
+      "description": "List documents. Uploaded PDFs and text files. Content is not returned, only metadata and embedding state. Upload happens in the portal.",
+      "method": "GET",
+      "path": "/knowledge/documents",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [
+          "include_inactive",
+          "limit",
+          "starting_after"
+        ],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "include_inactive": {
+            "type": "boolean",
+            "description": "Include items switched off. Default false."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Page size, 1 to 100. Default 25."
+          },
+          "starting_after": {
+            "type": "string",
+            "description": "The next_cursor from the previous page."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_document",
+      "description": "Get a document. One document by id, metadata only.",
+      "method": "GET",
+      "path": "/knowledge/documents/{id}",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_document",
+      "description": "Rename or toggle a document. Change the name or switch it off without deleting it.",
+      "method": "PATCH",
+      "path": "/knowledge/documents/{id}",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "name",
+          "active"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "delete_document",
+      "description": "Delete a document. Removes the document and its embeddings.",
+      "method": "DELETE",
+      "path": "/knowledge/documents/{id}",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_ai_config",
+      "description": "Get the AI configuration. All nine sections in one call. available on file_handling, followups, csat and comment_ai says whether the plan includes that feature.",
+      "method": "GET",
+      "path": "/ai/config",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_ai_channels",
+      "description": "Get the per-channel AI switches. For meta (Facebook + Instagram share one switch), sms, whatsapp and telegram: whether the channel is connected, whether the AI answers on it, and whether automations run on it.",
+      "method": "GET",
+      "path": "/ai/channels",
+      "scope": "read",
+      "kind": "read",
+      "hasBody": false,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    }
+  ]
+}

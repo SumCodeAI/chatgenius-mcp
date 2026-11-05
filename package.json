@@ -1,0 +1,47 @@
+{
+  "name": "chatgenius-mcp",
+  "version": "0.2.2",
+  "description": "MCP server for ChatGenius: give Claude, Cursor, Gemini CLI or any MCP client tools over your Instagram, Facebook, WhatsApp and SMS inbox, contacts, appointments, flows, posts and knowledge base.",
+  "license": "MIT",
+  "homepage": "https://sumgenius.ai/docs/mcp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SumCodeAI/chatgenius-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SumCodeAI/chatgenius-mcp/issues"
+  },
+  "type": "module",
+  "bin": {
+    "chatgenius-mcp": "bin/chatgenius-mcp.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "tools.json",
+    "README.md",
+    "server.json"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build:tools": "node scripts/build-tools.mjs",
+    "check": "node scripts/build-tools.mjs --check",
+    "smoke": "node scripts/smoke.mjs",
+    "start": "node bin/chatgenius-mcp.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "chatgenius",
+    "instagram",
+    "dm-automation",
+    "sumgenius"
+  ],
+  "author": "SumGeniusAI LLC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0"
+  },
+  "mcpName": "io.github.SumCodeAI/chatgenius"
+}
