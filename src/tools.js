@@ -6,7 +6,10 @@
  *
  * kind: read (no side effects) | write (creates or edits) | destructive
  * (sends something to a person, publishes, deletes). Clients use the hints
- * to decide when to ask the person before running a tool.
+ * to decide when to ask the person before running a tool. destructive also
+ * covers edits that overwrite data with no undo, and pausing a live automation.
+ * openWorld: true marks a non-destructive tool that reaches Instagram or another
+ * outside service (destructive tools are open world already).
  */
 export const TOOLS = [
   // Account
@@ -16,8 +19,8 @@ export const TOOLS = [
   // Contacts and tags
   { name: 'list_contacts', op: 'list_contacts', kind: 'read' },
   { name: 'get_contact', op: 'get_a_contact', kind: 'read' },
-  { name: 'upsert_contact', op: 'create_or_update_a_contact', kind: 'write' },
-  { name: 'update_contact', op: 'update_a_contact', kind: 'write' },
+  { name: 'upsert_contact', op: 'create_or_update_a_contact', kind: 'destructive' },
+  { name: 'update_contact', op: 'update_a_contact', kind: 'destructive' },
   { name: 'list_tags', op: 'list_tags', kind: 'read' },
   { name: 'create_tag', op: 'create_a_tag', kind: 'write' },
   { name: 'tag_contact', op: 'attach_a_tag', kind: 'write' },
@@ -61,12 +64,12 @@ export const TOOLS = [
   { name: 'validate_flow', op: 'validate_a_flow_definition', kind: 'read',
     note: 'Validate a definition without saving it. Loop on errors[] until it is clean, then call create_flow.' },
   { name: 'create_flow', op: 'create_a_flow', kind: 'write' },
-  { name: 'update_flow', op: 'update_a_flow', kind: 'write' },
+  { name: 'update_flow', op: 'update_a_flow', kind: 'destructive' },
   { name: 'publish_flow', op: 'publish_a_flow_draft', kind: 'destructive' },
   { name: 'activate_flow', op: 'activate_a_flow', kind: 'destructive' },
-  { name: 'pause_flow', op: 'pause_a_flow', kind: 'write' },
+  { name: 'pause_flow', op: 'pause_a_flow', kind: 'destructive' },
   { name: 'duplicate_flow', op: 'duplicate_a_flow', kind: 'write' },
-  { name: 'discard_flow_draft', op: 'discard_a_flow_draft', kind: 'write' },
+  { name: 'discard_flow_draft', op: 'discard_a_flow_draft', kind: 'destructive' },
   { name: 'delete_flow', op: 'delete_a_flow', kind: 'destructive',
     note: 'Permanent: the flow, its versions, sessions and analytics are gone. Confirm with the user, and prefer pause_flow.' },
   { name: 'get_flow_analytics', op: 'get_flow_analytics', kind: 'read' },
@@ -92,17 +95,17 @@ export const TOOLS = [
   { name: 'get_handled_comment', op: 'get_a_handled_comment', kind: 'read' },
   { name: 'get_comment_manager_stats', op: 'get_comment_manager_stats', kind: 'read' },
   { name: 'approve_comment_reply', op: 'approve_a_reply', kind: 'destructive' },
-  { name: 'reject_comment_reply', op: 'reject_a_reply', kind: 'write' },
+  { name: 'reject_comment_reply', op: 'reject_a_reply', kind: 'destructive' },
   { name: 'bulk_approve_comment_replies', op: 'bulk_approve_replies', kind: 'destructive',
     note: 'Each approved reply is posted publicly under the comment. Confirm with the user.' },
-  { name: 'bulk_reject_comment_replies', op: 'bulk_reject_replies', kind: 'write' },
+  { name: 'bulk_reject_comment_replies', op: 'bulk_reject_replies', kind: 'destructive' },
 
   // Content Studio
   { name: 'list_posts', op: 'list_posts', kind: 'read' },
   { name: 'get_post', op: 'get_a_post', kind: 'read' },
   { name: 'get_posting_capabilities', op: 'get_posting_capabilities', kind: 'read' },
-  { name: 'create_post', op: 'create_a_post', kind: 'write' },
-  { name: 'update_post', op: 'update_a_post', kind: 'write' },
+  { name: 'create_post', op: 'create_a_post', kind: 'write', openWorld: true },
+  { name: 'update_post', op: 'update_a_post', kind: 'destructive' },
   { name: 'schedule_post', op: 'schedule_a_post', kind: 'destructive' },
   { name: 'publish_post', op: 'publish_a_post_now', kind: 'destructive' },
   { name: 'unschedule_post', op: 'unschedule_a_post', kind: 'write' },
@@ -118,17 +121,17 @@ export const TOOLS = [
   { name: 'get_wins_and_opportunities', op: 'get_wins_and_opportunities', kind: 'read' },
   { name: 'get_audience_demographics', op: 'get_audience_demographics', kind: 'read',
     note: 'Includes followers online by hour, which is what "when should I post" is answered from.' },
-  { name: 'get_top_posts', op: 'list_your_top_posts', kind: 'read' },
+  { name: 'list_post_performance', op: 'list_post_performance', kind: 'read' },
   { name: 'get_account_insights', op: 'get_account_insights', kind: 'read' },
-  { name: 'add_competitor', op: 'track_a_competitor', kind: 'write' },
+  { name: 'add_competitor', op: 'track_a_competitor', kind: 'write', openWorld: true },
   { name: 'remove_competitor', op: 'stop_tracking_a_competitor', kind: 'write' },
-  { name: 'refresh_market_intel', op: 'refresh_from_meta', kind: 'write',
+  { name: 'refresh_market_intel', op: 'refresh_from_meta', kind: 'write', openWorld: true,
     note: 'Slow: one Meta call per tracked account. Only call it when the stored snapshot is stale.' },
 
   // Knowledge base
   { name: 'list_faqs', op: 'list_faqs', kind: 'read' },
   { name: 'create_faq', op: 'create_an_faq', kind: 'write' },
-  { name: 'update_faq', op: 'update_an_faq', kind: 'write' },
+  { name: 'update_faq', op: 'update_an_faq', kind: 'destructive' },
   { name: 'list_services', op: 'list_services', kind: 'read' },
   { name: 'list_knowledge_gaps', op: 'list_knowledge_gaps', kind: 'read' },
   { name: 'get_knowledge_usage', op: 'get_knowledge_base_usage', kind: 'read' },
@@ -136,7 +139,7 @@ export const TOOLS = [
   { name: 'delete_faq', op: 'delete_an_faq', kind: 'destructive' },
   { name: 'get_service', op: 'get_a_service', kind: 'read' },
   { name: 'create_service', op: 'create_a_service', kind: 'write' },
-  { name: 'update_service', op: 'update_a_service', kind: 'write' },
+  { name: 'update_service', op: 'update_a_service', kind: 'destructive' },
   { name: 'delete_service', op: 'delete_a_service', kind: 'destructive' },
   { name: 'list_documents', op: 'list_documents', kind: 'read' },
   { name: 'get_document', op: 'get_a_document', kind: 'read' },

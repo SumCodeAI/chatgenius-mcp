@@ -1,9 +1,9 @@
 {
-  "spec_version": "1.18.0",
+  "spec_version": "1.18.1",
   "tools": [
     {
       "name": "get_account",
-      "description": "Get the account. Identity, plan, the calling key and its scope, and the configured webhook endpoints. The cheapest call to prove a key works.",
+      "description": "Get the account. Call this first. Identity, plan, the calling key and its scope, and the configured webhook endpoints. When no Instagram, Facebook or WhatsApp account is connected, setup.channels_connected is false and setup.connect_url is where the owner connects one; until then the inbox, contact, comment and post tools return nothing.",
       "method": "GET",
       "path": "/account",
       "scope": "read",
@@ -171,7 +171,7 @@
       "method": "POST",
       "path": "/contacts",
       "scope": "write",
-      "kind": "write",
+      "kind": "destructive",
       "hasBody": true,
       "where": {
         "path": [],
@@ -256,7 +256,7 @@
       "method": "PATCH",
       "path": "/contacts/{id}",
       "scope": "write",
-      "kind": "write",
+      "kind": "destructive",
       "hasBody": true,
       "where": {
         "path": [
@@ -1193,7 +1193,7 @@
     },
     {
       "name": "update_appointment",
-      "description": "Update an appointment. Edit details and/or status, the portal's edit form. Send only what changes. Detail edits are pushed to the connected calendars; a status change to cancelled removes the calendar event and fires appointment.cancelled. To move the time use reschedule, which checks the slot. Edits are pushed to the connected calendar, and a status of cancelled removes the event. To move the time, use reschedule_appointment.",
+      "description": "Update an appointment. Edit details and/or status, the portal's edit form. Send only what changes. Detail edits are pushed to the connected calendars; a status change to cancelled removes the calendar event and fires appointment.cancelled. Events imported from the owner's own Google Calendar are changed in ChatGenius only. To move the time use reschedule, which checks the slot. Edits are pushed to the connected calendar, and a status of cancelled removes the event. To move the time, use reschedule_appointment.",
       "method": "PATCH",
       "path": "/appointments/{id}",
       "scope": "write",
@@ -1317,7 +1317,7 @@
     },
     {
       "name": "book_appointment",
-      "description": "Book an appointment. Books a slot the way the portal calendar does: the account's required customer fields are enforced (422 missing_fields), the time must be in the future and free (409 slot_unavailable), the appointment is confirmed at once, synced to Google Calendar and GoHighLevel when connected, and appointment.booked fires. Attach conversation_id to book for a person you are chatting with; they get the confirmation DM unless send_confirmation is false. date and time are the customer's wall-clock time in timezone (the account timezone when omitted).",
+      "description": "Book an appointment. Books a slot the way the portal calendar does: the account's required customer fields are enforced (422 missing_fields), the time must be in the future (400 invalid_param) and free (409 slot_unavailable), the appointment is confirmed at once, synced to Google Calendar and GoHighLevel when connected, and appointment.booked fires. Business hours are not checked here: call availability first to offer open times. Attach conversation_id to link the booking to a person you are chatting with; no message is sent to them. date and time are the customer's wall-clock time in timezone (the account timezone when omitted).",
       "method": "POST",
       "path": "/appointments",
       "scope": "write",
@@ -1396,12 +1396,11 @@
               "integer",
               "null"
             ],
-            "description": "Book for the person in this conversation; sets the channel and enables the confirmation DM."
+            "description": "Link the booking to the person in this conversation; sets the channel. No message is sent."
           },
           "send_confirmation": {
             "type": "boolean",
-            "default": true,
-            "description": "With conversation_id: DM the customer the confirmation."
+            "description": "Reserved for booking confirmation emails. Accepted and currently ignored."
           },
           "location": {
             "type": "object",
@@ -1456,7 +1455,7 @@
     },
     {
       "name": "reschedule_appointment",
-      "description": "Reschedule an appointment. Moves a pending or confirmed appointment to a new date and time after checking the slot is free, updates the connected calendars, fires appointment.rescheduled, and DMs the customer when the booking came from a conversation. 409 slot_unavailable when the slot is taken, 409 not_active when the appointment is not pending or confirmed.",
+      "description": "Reschedule an appointment. Moves a pending or confirmed appointment to a new date and time after checking the slot is free (its own current slot does not count as taken), updates the connected calendars, and fires appointment.rescheduled. The customer is not messaged. A booking with no conversation must also fall inside business hours. 400 invalid_param for a time in the past, 404 not_found for an unknown id, 409 slot_unavailable when the slot is taken or outside business hours, 409 not_active when the appointment is not pending or confirmed.",
       "method": "POST",
       "path": "/appointments/{id}/reschedule",
       "scope": "write",
@@ -1499,7 +1498,7 @@
     },
     {
       "name": "cancel_appointment",
-      "description": "Cancel an appointment. Sets status cancelled, removes the Google Calendar and GoHighLevel events, fires appointment.cancelled. 409 already_cancelled if it already is. Send {} as the body.",
+      "description": "Cancel an appointment. Sets status cancelled, removes the Google Calendar and GoHighLevel events of a booking made in ChatGenius (an event imported from the owner's own calendar is left alone), fires appointment.cancelled. 409 already_cancelled if it already is. Send {} as the body.",
       "method": "POST",
       "path": "/appointments/{id}/cancel",
       "scope": "write",
@@ -2085,7 +2084,7 @@
       "method": "PATCH",
       "path": "/flows/{id}",
       "scope": "write",
-      "kind": "write",
+      "kind": "destructive",
       "hasBody": true,
       "where": {
         "path": [
@@ -2360,7 +2359,7 @@
       "method": "POST",
       "path": "/flows/{id}/pause",
       "scope": "write",
-      "kind": "write",
+      "kind": "destructive",
       "hasBody": false,
       "where": {
         "path": [
@@ -2418,7 +2417,7 @@
       "method": "POST",
       "path": "/flows/{id}/discard-draft",
       "scope": "write",
-      "kind": "write",
+      "kind": "destructive",
       "hasBody": false,
       "where": {
         "path": [
@@ -3622,7 +3621,7 @@
       "method": "POST",
       "path": "/comments/{id}/reject",
       "scope": "write",
-      "kind": "write",
+      "kind": "destructive",
       "hasBody": false,
       "where": {
         "path": [
@@ -3684,7 +3683,7 @@
       "method": "POST",
       "path": "/comments/reject",
       "scope": "write",
-      "kind": "write",
+      "kind": "destructive",
       "hasBody": true,
       "where": {
         "path": [],
@@ -3838,6 +3837,7 @@
       "path": "/posts",
       "scope": "write",
       "kind": "write",
+      "openWorld": true,
       "hasBody": true,
       "where": {
         "path": [],
@@ -4103,7 +4103,7 @@
       "method": "PATCH",
       "path": "/posts/{id}",
       "scope": "write",
-      "kind": "write",
+      "kind": "destructive",
       "hasBody": true,
       "where": {
         "path": [
@@ -4675,8 +4675,8 @@
       }
     },
     {
-      "name": "get_top_posts",
-      "description": "List your top posts. Your own recent posts with their stored performance: reach, impressions, likes, comments, saves, shares, video views, engagement rate and save rate. Newest first. Stored, so refresh first for current numbers.",
+      "name": "list_post_performance",
+      "description": "List post performance. Your own recent posts with their stored performance: reach, impressions, likes, comments, saves, shares, video views, engagement rate and save rate. Newest first. Stored, so refresh first for current numbers.",
       "method": "GET",
       "path": "/market-intel/top-posts",
       "scope": "read",
@@ -4742,6 +4742,7 @@
       "path": "/competitors",
       "scope": "write",
       "kind": "write",
+      "openWorld": true,
       "hasBody": true,
       "where": {
         "path": [],
@@ -4801,6 +4802,7 @@
       "path": "/market-intel/refresh",
       "scope": "write",
       "kind": "write",
+      "openWorld": true,
       "hasBody": false,
       "where": {
         "path": [],
@@ -4913,7 +4915,7 @@
       "method": "PATCH",
       "path": "/knowledge/faqs/{id}",
       "scope": "write",
-      "kind": "write",
+      "kind": "destructive",
       "hasBody": true,
       "where": {
         "path": [
@@ -5227,8 +5229,12 @@
             "maxLength": 10000
           },
           "price": {
-            "type": "number",
-            "minimum": 0
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "Optional. Leave empty when there is no set price; it is never shown to customers as 0 or free. Dropped when price_unit is free or quote."
           },
           "currency": {
             "type": [
@@ -5243,8 +5249,10 @@
               "fixed",
               "hourly",
               "per_unit",
-              "quote"
-            ]
+              "quote",
+              "free"
+            ],
+            "description": "free marks a service as free; quote means the price is given on request."
           },
           "duration_minutes": {
             "type": [
@@ -5270,8 +5278,7 @@
           }
         },
         "required": [
-          "name",
-          "price"
+          "name"
         ],
         "additionalProperties": false
       }
@@ -5282,7 +5289,7 @@
       "method": "PATCH",
       "path": "/knowledge/services/{id}",
       "scope": "write",
-      "kind": "write",
+      "kind": "destructive",
       "hasBody": true,
       "where": {
         "path": [
@@ -5321,8 +5328,12 @@
             "maxLength": 10000
           },
           "price": {
-            "type": "number",
-            "minimum": 0
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "Optional. Leave empty when there is no set price; it is never shown to customers as 0 or free. Dropped when price_unit is free or quote."
           },
           "currency": {
             "type": [
@@ -5337,8 +5348,10 @@
               "fixed",
               "hourly",
               "per_unit",
-              "quote"
-            ]
+              "quote",
+              "free"
+            ],
+            "description": "free marks a service as free; quote means the price is given on request."
           },
           "duration_minutes": {
             "type": [

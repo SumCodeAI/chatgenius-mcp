@@ -16,7 +16,7 @@ const annotations = (t) => ({
   readOnlyHint: t.kind === 'read',
   destructiveHint: t.kind === 'destructive',
   idempotentHint: t.method === 'GET' || t.method === 'DELETE',
-  openWorldHint: t.kind === 'destructive',
+  openWorldHint: t.kind === 'destructive' || t.openWorld === true,
 });
 
 const text = (s) => ({ content: [{ type: 'text', text: s }] });
