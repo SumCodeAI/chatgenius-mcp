@@ -3,13 +3,13 @@
   "name": "io.github.SumCodeAI/chatgenius",
   "description": "ChatGenius tools: Instagram, Facebook, WhatsApp and SMS inbox, contacts, bookings, flows, posts.",
   "websiteUrl": "https://sumgenius.ai/docs/mcp",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "chatgenius-mcp",
-      "version": "0.2.4",
+      "version": "0.3.0",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

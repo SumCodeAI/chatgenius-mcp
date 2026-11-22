@@ -43,7 +43,7 @@ claude plugin install chatgenius@sumgenius
 
 ## What it can do
 
-105 tools in ten groups. Read tools are safe to run freely. Write tools create or edit records. Destructive tools reach a real person, publish content or change what runs live, and are marked so the client asks you first.
+108 tools in ten groups. Read tools are safe to run freely. Write tools create or edit records. Destructive tools reach a real person, publish content or change what runs live, and are marked so the client asks you first.
 
 | Group | Tools |
 |---|---|
@@ -55,8 +55,8 @@ claude plugin install chatgenius@sumgenius
 | Comments | `list_comment_triggers`, `get_comment_trigger`, `simulate_comment`, `create_comment_trigger`, `update_comment_trigger`, `duplicate_comment_trigger`, `delete_comment_trigger`, `get_comment_trigger_stats`, `list_recent_posts`, `list_handled_comments`, `get_handled_comment`, `get_comment_manager_stats`, `approve_comment_reply`, `reject_comment_reply`, `bulk_approve_comment_replies`, `bulk_reject_comment_replies` |
 | Content Studio | `list_posts`, `get_post`, `get_posting_capabilities`, `create_post`, `update_post`, `schedule_post`, `publish_post`, `unschedule_post`, `retry_post`, `delete_post` |
 | Market Intel | `list_competitors`, `get_competitor`, `get_competitor_leaderboard`, `get_follower_history`, `get_wins_and_opportunities`, `get_audience_demographics`, `list_post_performance`, `get_account_insights`, `add_competitor`, `remove_competitor`, `refresh_market_intel` |
-| Knowledge base | `list_faqs`, `create_faq`, `update_faq`, `list_services`, `list_knowledge_gaps`, `get_knowledge_usage`, `get_faq`, `delete_faq`, `get_service`, `create_service`, `update_service`, `delete_service`, `list_documents`, `get_document`, `update_document`, `delete_document` |
-| AI settings | `get_ai_config`, `get_ai_channels` |
+| Knowledge base | `list_faqs`, `create_faq`, `update_faq`, `list_services`, `list_knowledge_gaps`, `resolve_knowledge_gap`, `dismiss_knowledge_gap`, `get_knowledge_usage`, `get_faq`, `delete_faq`, `get_service`, `create_service`, `update_service`, `delete_service`, `list_documents`, `get_document`, `update_document`, `delete_document` |
+| AI settings | `get_ai_config`, `update_ai_config`, `get_ai_channels` |
 
 Things to try:
 

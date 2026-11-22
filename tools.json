@@ -5010,7 +5010,7 @@
     },
     {
       "name": "list_knowledge_gaps",
-      "description": "List knowledge gaps. Questions the AI could not answer well, flagged by the gap detector with the customer message, the AI reply, a canonical form of the question, and a suggested answer and target. Open gaps by default; status=all for everything. Read-only: fix a gap with POST /knowledge/faqs or by editing identity.instructions, and dismiss it in the portal.",
+      "description": "List knowledge gaps. Questions the AI could not answer well, flagged by the gap detector with the customer message, the AI reply, a canonical form of the question, and a suggested answer and target. Open gaps by default; status=all for everything. Fix one with POST /knowledge-gaps/{id}/resolve (adds an FAQ) or by editing identity.instructions with PATCH /ai/config, then dismiss what needs no fix.",
       "method": "GET",
       "path": "/knowledge-gaps",
       "scope": "read",
@@ -5081,6 +5081,72 @@
             "description": "The next_cursor from the previous page."
           }
         },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "resolve_knowledge_gap",
+      "description": "Resolve a knowledge gap. Adds answer as a knowledge base FAQ under the gap's question and marks the gap resolved; the AI uses it from the next message. Counts against the plan's knowledge base cap (403 plan_limit_reached). Only an open gap can be resolved (409 not_open). embedding_pending true means the FAQ is saved and indexing finishes shortly. Ask the user for the answer, or confirm a suggested_answer with them first: it becomes what the AI tells customers.",
+      "method": "POST",
+      "path": "/knowledge-gaps/{id}/resolve",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": true,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": [
+          "answer"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          },
+          "answer": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "The answer the AI should give. Saved word for word as the FAQ answer."
+          }
+        },
+        "required": [
+          "id",
+          "answer"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "dismiss_knowledge_gap",
+      "description": "Dismiss a knowledge gap. Marks the gap dismissed and teaches the AI nothing. The detector will not raise the same question again. Only an open gap can be dismissed (409 not_open). Send {} as the body.",
+      "method": "POST",
+      "path": "/knowledge-gaps/{id}/dismiss",
+      "scope": "write",
+      "kind": "write",
+      "hasBody": false,
+      "where": {
+        "path": [
+          "id"
+        ],
+        "query": [],
+        "body": []
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric id."
+          }
+        },
+        "required": [
+          "id"
+        ],
         "additionalProperties": false
       }
     },
@@ -5563,6 +5629,505 @@
       "inputSchema": {
         "type": "object",
         "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_ai_config",
+      "description": "Update the AI configuration. Send any subset of sections, each with any subset of its fields. Omitted fields keep their values. off_limits merges per category. Changing starters publishes to Instagram and Facebook at once, like the portal. Never touches the per-channel AI on/off switches. Changes how the live AI answers real customers. Call get_ai_config first, send only the fields that change, and confirm the change with the user. Saving starters publishes them to Instagram and Facebook at once. Business hours: send only the days that change.",
+      "method": "PATCH",
+      "path": "/ai/config",
+      "scope": "write",
+      "kind": "destructive",
+      "hasBody": true,
+      "where": {
+        "path": [],
+        "query": [],
+        "body": [
+          "identity",
+          "behavior",
+          "restrictions",
+          "starters",
+          "file_handling",
+          "followups",
+          "csat",
+          "comment_ai",
+          "booking"
+        ]
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "identity": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 100,
+                "description": "What the AI calls itself."
+              },
+              "tone": {
+                "type": "string",
+                "enum": [
+                  "casual",
+                  "professional",
+                  "formal"
+                ]
+              },
+              "instructions": {
+                "type": "string",
+                "maxLength": 20000,
+                "description": "The custom rules and guidelines. The system prompt the business writes."
+              },
+              "welcome_message": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 500,
+                "description": "Sent as written on the first message of every new conversation. Null for no greeting."
+              },
+              "welcome_mode": {
+                "type": "string",
+                "enum": [
+                  "combined",
+                  "standalone"
+                ],
+                "description": "combined: welcome and the AI answer in one message. standalone: welcome only, the AI answers the next message."
+              },
+              "website_url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "business_contact_email": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "business_contact_phone": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "default_customer_language": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "en",
+                  "es",
+                  "zh",
+                  "fr",
+                  "de",
+                  "pt",
+                  "ja",
+                  "ru",
+                  "hi",
+                  "ar",
+                  "it",
+                  "ko",
+                  "nl",
+                  "cs",
+                  "pl",
+                  "tr",
+                  "sv",
+                  "da",
+                  "no",
+                  "ro",
+                  "hu",
+                  "uk",
+                  "el",
+                  "vi",
+                  "id",
+                  "th",
+                  "tl",
+                  "he",
+                  null
+                ],
+                "description": "Customer language, used until a lead's own language is known: for the AI reply to a message with no real words (an emoji, \"ok\", a name) and for automated messages (flow prompts, booking times, CSAT survey, fallback replies). Null means Automatic: the AI follows the language of the instructions and automated messages use English."
+              }
+            }
+          },
+          "behavior": {
+            "type": "object",
+            "properties": {
+              "goals": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "answer_questions",
+                    "book_appointments",
+                    "capture_leads",
+                    "qualify_prospects"
+                  ]
+                },
+                "minItems": 1
+              },
+              "batch_messages": {
+                "type": "boolean",
+                "description": "Wait for rapid follow-up messages before answering."
+              },
+              "batch_window_ms": {
+                "type": "integer",
+                "minimum": 5000
+              },
+              "auto_escalation": {
+                "type": "boolean",
+                "description": "Hand to a human on frustration or an explicit request."
+              },
+              "copilot_enabled": {
+                "type": "boolean",
+                "description": "The AI drafts, a person approves."
+              },
+              "reply_pacing": {
+                "type": "string",
+                "enum": [
+                  "instant",
+                  "quick",
+                  "natural",
+                  "relaxed"
+                ],
+                "description": "How long after the lead's last message an AI reply arrives. instant: as soon as it is written. quick: about 15 to 30 seconds. natural: about 30 to 60. relaxed: about 60 to 90. Anything but instant turns batching on."
+              },
+              "business_hours": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "day": {
+                      "type": "string",
+                      "enum": [
+                        "sunday",
+                        "monday",
+                        "tuesday",
+                        "wednesday",
+                        "thursday",
+                        "friday",
+                        "saturday"
+                      ]
+                    },
+                    "closed": {
+                      "type": "boolean"
+                    },
+                    "open": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "HH:MM, 24-hour"
+                    },
+                    "close": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "HH:MM, 24-hour"
+                    }
+                  }
+                },
+                "description": "Only the days you send change, and only the fields you send on each. Open 24/7 is open 00:00, close 23:59 on every day. A day with closed false needs open and close."
+              }
+            }
+          },
+          "restrictions": {
+            "type": "object",
+            "properties": {
+              "off_limits": {
+                "type": "object",
+                "properties": {
+                  "legal": {
+                    "type": "boolean"
+                  },
+                  "medical": {
+                    "type": "boolean"
+                  },
+                  "competitors": {
+                    "type": "boolean"
+                  },
+                  "pricing": {
+                    "type": "boolean"
+                  },
+                  "personal": {
+                    "type": "boolean"
+                  },
+                  "offtopic": {
+                    "type": "boolean"
+                  }
+                },
+                "description": "Send only the categories to change."
+              },
+              "solicitation_pause": {
+                "type": "boolean"
+              }
+            }
+          },
+          "starters": {
+            "type": "object",
+            "properties": {
+              "instagram": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "questions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 80
+                    },
+                    "maxItems": 4
+                  }
+                }
+              },
+              "facebook": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "ice_breakers",
+                      "get_started"
+                    ],
+                    "description": "ice_breakers shows questions, get_started shows one button."
+                  },
+                  "questions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 80
+                    },
+                    "maxItems": 4
+                  }
+                }
+              }
+            }
+          },
+          "file_handling": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "description": "One switch for images, documents and videos. Enabling forces batching on."
+              },
+              "auto_escalate_on_image": {
+                "type": "boolean"
+              },
+              "auto_escalate_on_document": {
+                "type": "boolean"
+              },
+              "auto_escalate_on_video": {
+                "type": "boolean"
+              },
+              "escalate_if_team_online": {
+                "type": "boolean"
+              }
+            }
+          },
+          "followups": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "first_delay_minutes": {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 60
+              },
+              "second_delay_hours": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 23
+              },
+              "quiet_hours": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "start": {
+                    "type": "string",
+                    "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "end": {
+                    "type": "string",
+                    "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                  }
+                }
+              }
+            }
+          },
+          "csat": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "template": {
+                "type": "string",
+                "enum": [
+                  "simple",
+                  "friendly",
+                  "professional",
+                  "custom"
+                ]
+              },
+              "custom_message": {
+                "type": "string",
+                "maxLength": 500
+              }
+            }
+          },
+          "comment_ai": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "description": "Run the AI Comment Manager on comments no trigger claimed."
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "approval"
+                ],
+                "description": "auto posts replies at once; approval queues them under /comments."
+              },
+              "instructions": {
+                "type": "string",
+                "maxLength": 5000,
+                "description": "Extra guidance for comment replies, on top of the knowledge base and the AI identity."
+              },
+              "reply_length": {
+                "type": "string",
+                "enum": [
+                  "short",
+                  "medium",
+                  "detailed"
+                ],
+                "description": "short is 1 to 2 sentences, medium 2 to 3, detailed 3 to 5."
+              },
+              "moderation": {
+                "type": "object",
+                "properties": {
+                  "spam": {
+                    "type": "boolean"
+                  },
+                  "profanity": {
+                    "type": "boolean"
+                  },
+                  "negativity": {
+                    "type": "boolean"
+                  },
+                  "competitor_links": {
+                    "type": "boolean"
+                  },
+                  "self_promotion": {
+                    "type": "boolean"
+                  }
+                },
+                "description": "Categories that get the comment hidden. True means hide. Send only the categories to change."
+              },
+              "dm_on_hide": {
+                "type": "boolean",
+                "description": "DM the person when their comment is hidden."
+              },
+              "dm_message": {
+                "type": "string",
+                "maxLength": 1000,
+                "description": "That DM. {name} is the commenter."
+              },
+              "exclude_rules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "post_id",
+                        "keyword"
+                      ]
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "value"
+                  ]
+                },
+                "description": "Skip comments on these posts, or containing these words. Replaces the whole list."
+              }
+            }
+          },
+          "booking": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "description": "AI Booking. Off means the AI declines booking requests; the portal and the API can still book."
+              },
+              "google_meet_invites": {
+                "type": "boolean",
+                "description": "Send a Google Meet link and email invite for services marked virtual. Needs Google Calendar connected (409 not_connected otherwise) and forces email to required."
+              },
+              "required_fields": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "boolean"
+                  },
+                  "email": {
+                    "type": "boolean"
+                  },
+                  "phone": {
+                    "type": "boolean"
+                  },
+                  "address": {
+                    "type": "boolean"
+                  },
+                  "vehicle": {
+                    "type": "boolean"
+                  },
+                  "cost": {
+                    "type": "boolean"
+                  },
+                  "address_parts": {
+                    "type": "object",
+                    "properties": {
+                      "city": {
+                        "type": "boolean"
+                      },
+                      "state": {
+                        "type": "boolean"
+                      },
+                      "street": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Only meaningful when address is required."
+                  }
+                },
+                "description": "What the customer must provide to book. Send only the keys to change."
+              }
+            }
+          }
+        },
         "additionalProperties": false
       }
     },
