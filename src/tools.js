@@ -152,6 +152,6 @@ export const TOOLS = [
   // AI settings (switching the AI on or off per channel needs the admin scope, which assistants never get)
   { name: 'get_ai_config', op: 'get_the_ai_configuration', kind: 'read' },
   { name: 'update_ai_config', op: 'update_the_ai_configuration', kind: 'destructive',
-    note: 'Changes how the live AI answers real customers. Call get_ai_config first, send only the fields that change, and confirm the change with the user. Saving starters publishes them to Instagram and Facebook at once. Business hours: send only the days that change.' },
+    note: 'Changes how the live AI answers real customers. Call get_ai_config first, send only the fields that change, and confirm the change with the user. Saving starters publishes them to Instagram and Facebook at once. Booking hours (booking.hours, when customers can book): send only the days that change.' },
   { name: 'get_ai_channels', op: 'get_the_per_channel_ai_switches', kind: 'read' },
 ];

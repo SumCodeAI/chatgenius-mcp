@@ -1,5 +1,5 @@
 {
-  "spec_version": "1.18.1",
+  "spec_version": "1.19.0",
   "tools": [
     {
       "name": "get_account",
@@ -5634,7 +5634,7 @@
     },
     {
       "name": "update_ai_config",
-      "description": "Update the AI configuration. Send any subset of sections, each with any subset of its fields. Omitted fields keep their values. off_limits merges per category. Changing starters publishes to Instagram and Facebook at once, like the portal. Never touches the per-channel AI on/off switches. Changes how the live AI answers real customers. Call get_ai_config first, send only the fields that change, and confirm the change with the user. Saving starters publishes them to Instagram and Facebook at once. Business hours: send only the days that change.",
+      "description": "Update the AI configuration. Send any subset of sections, each with any subset of its fields. Omitted fields keep their values. off_limits merges per category. Changing starters publishes to Instagram and Facebook at once, like the portal. Never touches the per-channel AI on/off switches. Changes how the live AI answers real customers. Call get_ai_config first, send only the fields that change, and confirm the change with the user. Saving starters publishes them to Instagram and Facebook at once. Booking hours (booking.hours, when customers can book): send only the days that change.",
       "method": "PATCH",
       "path": "/ai/config",
       "scope": "write",
@@ -5797,44 +5797,6 @@
                   "relaxed"
                 ],
                 "description": "How long after the lead's last message an AI reply arrives. instant: as soon as it is written. quick: about 15 to 30 seconds. natural: about 30 to 60. relaxed: about 60 to 90. Anything but instant turns batching on."
-              },
-              "business_hours": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "day": {
-                      "type": "string",
-                      "enum": [
-                        "sunday",
-                        "monday",
-                        "tuesday",
-                        "wednesday",
-                        "thursday",
-                        "friday",
-                        "saturday"
-                      ]
-                    },
-                    "closed": {
-                      "type": "boolean"
-                    },
-                    "open": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
-                      "description": "HH:MM, 24-hour"
-                    },
-                    "close": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
-                      "description": "HH:MM, 24-hour"
-                    }
-                  }
-                },
-                "description": "Only the days you send change, and only the fields you send on each. Open 24/7 is open 00:00, close 23:59 on every day. A day with closed false needs open and close."
               }
             }
           },
@@ -6124,6 +6086,44 @@
                   }
                 },
                 "description": "What the customer must provide to book. Send only the keys to change."
+              },
+              "hours": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "day": {
+                      "type": "string",
+                      "enum": [
+                        "sunday",
+                        "monday",
+                        "tuesday",
+                        "wednesday",
+                        "thursday",
+                        "friday",
+                        "saturday"
+                      ]
+                    },
+                    "closed": {
+                      "type": "boolean"
+                    },
+                    "open": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "HH:MM, 24-hour"
+                    },
+                    "close": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "HH:MM, 24-hour"
+                    }
+                  }
+                },
+                "description": "When customers can book (AI and flow bookings), in the account timezone. Not opening hours: put those in an FAQ or the AI instructions. Only the days you send change, and only the fields you send on each. Any time is open 00:00, close 23:59 on every day. A day with closed false needs open and close."
               }
             }
           }
