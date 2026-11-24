@@ -1,5 +1,7 @@
 # chatgenius-mcp
 
+[![SumCodeAI/chatgenius-mcp MCP server](https://glama.ai/mcp/servers/SumCodeAI/chatgenius-mcp/badges/score.svg)](https://glama.ai/mcp/servers/SumCodeAI/chatgenius-mcp)
+
 An MCP server for [ChatGenius](https://sumgenius.ai). Add it to Claude Desktop, Claude Code, Cursor, Zed, Gemini CLI or any client that speaks the Model Context Protocol, and your assistant can read and act on your Instagram, Facebook, WhatsApp and SMS inbox, contacts, appointments, flows, comment automation, Content Studio posts and knowledge base.
 
 It is a thin wrapper over the [ChatGenius REST API](https://sumgenius.ai/docs/rest-api). Every tool is one API call. Nothing is stored, nothing runs on our side, and your API key never leaves your machine.
